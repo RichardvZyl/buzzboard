@@ -11,6 +11,8 @@ const OWNER = "a".repeat(64);
 const AGENT = "b".repeat(64);
 const SYNC = "c".repeat(64);
 const STRANGER = "d".repeat(64);
+const MAINT = "f".repeat(64);
+const MAINT2 = "9".repeat(64);
 const CHANNEL = "11111111-2222-3333-4444-555555555555";
 const ADDR = `30617:${OWNER}:widgets`;
 
@@ -100,6 +102,18 @@ describe("lane parsing", () => {
     expect(lane.githubUrl).toBe("https://github.com/acme/widgets");
     expect(lane.syncAgent).toBe(SYNC);
     expect(lane.description).toBe("widget work");
+  });
+
+  it("reads NIP-34 maintainers from every tag and value, and keeps raw tags", async () => {
+    const { data } = await boardWith([laneEvent([
+      ["maintainers", MAINT, "not-a-pubkey"],
+      ["maintainers", MAINT2.toUpperCase(), MAINT],
+      ["clone", "https://example.invalid/widgets.git"],
+    ])]);
+    const lane = data.lanes[0];
+    expect(lane.maintainers).toEqual([MAINT, MAINT2]);
+    expect(lane.tags).toContainEqual(["clone", "https://example.invalid/widgets.git"]);
+    expect(lane.tags).toContainEqual(["maintainers", MAINT, "not-a-pubkey"]);
   });
 
   it("keeps only the newest announcement per (owner, d) coordinate", async () => {
@@ -258,6 +272,35 @@ describe("sync agent", () => {
   });
 });
 
+describe("lane maintainers", () => {
+  const issue = issueEvent({ pubkey: AGENT });
+
+  it("are strict status actors", async () => {
+    const { cards } = await boardWith([
+      laneEvent([["maintainers", MAINT2], ["maintainers", MAINT]]), issue,
+      statusEvent(1630, MAINT, 200, issue.id, { tags: [["t", "in-review"]] }),
+    ]);
+    expect(cards[0].column).toBe("in_review");
+  });
+
+  it("only count once listed on the lane", async () => {
+    const { cards } = await boardWith([
+      laneEvent(), issue,
+      statusEvent(1630, MAINT, 200, issue.id, { tags: [["t", "in-review"]] }),
+    ]);
+    expect(cards[0].column).toBe("backlog");
+  });
+
+  it("a newer stranger status does not override a maintainer's", async () => {
+    const { cards } = await boardWith([
+      laneEvent([["maintainers", MAINT]]), issue,
+      statusEvent(1632, MAINT, 200, issue.id),
+      statusEvent(1631, STRANGER, 300, issue.id),
+    ]);
+    expect(cards[0].column).toBe("closed");
+  });
+});
+
 describe("rank / dispatch derivation and ordering", () => {
   it("reads rank and dispatch pointer from any member's newest tagged status", async () => {
     const issue = issueEvent();
@@ -332,6 +375,7 @@ describe("canvas board block", () => {
 const lane: Lane = {
   address: ADDR, owner: OWNER, repoId: "widgets", name: "Widgets", description: "",
   channelId: CHANNEL, githubUrl: "https://github.com/acme/widgets", syncAgent: null,
+  maintainers: [], tags: [],
 };
 const card: Card = {
   id: "e".repeat(64), subject: "Fix login", body: "", labels: [], author: OWNER,
@@ -420,5 +464,34 @@ describe("actions", () => {
     expect(ann.tags).toContainEqual(["buzz-channel", CHANNEL]);
     expect(ann.tags).toContainEqual(["web", lane.githubUrl!]);
     expect(ann.tags).toContainEqual(["sync-agent", SYNC]);
+  });
+
+  it("attachChannel keeps every tag of the newest announcement on the relay", async () => {
+    const stale = laneEvent([["buzz-channel", "old"]], 10);
+    const current = laneEvent([
+      ["buzz-channel", "old"], ["buzz-channel", "dup"], ["description", "fresh"],
+      ["maintainers", MAINT, MAINT2], ["clone", "https://example.invalid/widgets.git"],
+    ], 20);
+    const relay = new StubRelay([stale, current]);
+    // the lane object predates the maintainers tag; the relay copy wins
+    await attachChannel(relay as never, signer, { ...lane, tags: stale.tags }, CHANNEL);
+    const [ann] = relay.submitted;
+    expect(ann.tags).toEqual([
+      ["d", "widgets"], ["name", "Widgets"], ["buzz-channel", CHANNEL], ["description", "fresh"],
+      ["maintainers", MAINT, MAINT2], ["clone", "https://example.invalid/widgets.git"],
+    ]);
+  });
+
+  it("attachChannel falls back to the lane's raw tags when the relay has none", async () => {
+    const relay = new StubRelay();
+    await attachChannel(relay as never, signer, {
+      ...lane, channelId: null,
+      tags: [["d", "widgets"], ["name", "Widgets"], ["maintainers", MAINT], ["relays", "wss://example.invalid"]],
+    }, CHANNEL);
+    const [ann] = relay.submitted;
+    expect(ann.tags).toEqual([
+      ["d", "widgets"], ["name", "Widgets"], ["maintainers", MAINT],
+      ["relays", "wss://example.invalid"], ["buzz-channel", CHANNEL],
+    ]);
   });
 });

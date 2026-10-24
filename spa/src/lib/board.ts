@@ -3,7 +3,8 @@
 //                   its channel (existing web-client convention); ["web", url]
 //                   optionally links GitHub
 //   card          = kind 1621 git issue
-//   column        = NIP-34 status events (strict actors: author/owner/assignee;
+//   column        = NIP-34 status events (strict actors: author/owner/assignee,
+//                   plus the lane's sync agent and NIP-34 ["maintainers", ...];
 //                   assignee lifecycle: open=In Progress, resolved=In Review,
 //                   draft=blocked→In Review)
 //   rank          = ["rank", <base36>] on the newest status event carrying one
@@ -28,6 +29,10 @@ export interface Lane {
   channelId: string | null;
   githubUrl: string | null;
   syncAgent: string | null;
+  /** NIP-34 ["maintainers", <pubkey>, ...] on the announcement (all tags, all values) */
+  maintainers: string[];
+  /** raw announcement tags, so re-publishing keeps tags this client doesn't model */
+  tags: string[][];
 }
 
 /** "https://github.com/owner/repo[...]" -> "owner/repo" */
@@ -71,6 +76,19 @@ export const tagValue = (ev: SignedEvent, name: string): string | undefined =>
 const tagValues = (ev: SignedEvent, name: string): string[] =>
   ev.tags.filter((t) => t[0] === name && t.length >= 2).map((t) => t[1]);
 
+const HEX64 = /^[0-9a-f]{64}$/;
+
+/** Every pubkey in every ["maintainers", ...] tag, lowercased, deduped. */
+export const laneMaintainers = (ev: SignedEvent): string[] => [
+  ...new Set(
+    ev.tags
+      .filter((t) => t[0] === "maintainers")
+      .flatMap((t) => t.slice(1))
+      .map((v) => v.toLowerCase())
+      .filter((v) => HEX64.test(v)),
+  ),
+];
+
 const latestPerCoord = (events: SignedEvent[]): SignedEvent[] => {
   const best = new Map<string, SignedEvent>();
   for (const ev of events) {
@@ -109,7 +127,7 @@ const statusRecency = (a: SignedEvent, b: SignedEvent) =>
 
 function deriveCard(
   issue: SignedEvent, statuses: SignedEvent[], names: Set<string>,
-  syncAgent: string | null,
+  syncAgent: string | null, maintainers: string[] = [],
 ): Card {
   const referencing = statuses
     .filter((ev) => ev.tags.some((t) => t[0] === "e" && t[1] === issue.id))
@@ -128,12 +146,14 @@ function deriveCard(
 
   // column: strict actors only — the lane's declared sync agent counts,
   // because tagging it on the announcement is the owner delegating status
-  // authority (GitHub-side closes must be able to move cards)
+  // authority (GitHub-side closes must be able to move cards); NIP-34 lane
+  // maintainers count for the same reason (the owner delegated to them)
   const actors = new Set([issue.pubkey.toLowerCase()]);
   const owner = repoOwner(tagValue(issue, "a"));
   if (owner) actors.add(owner);
   if (assignee) actors.add(assignee.toLowerCase());
   if (syncAgent) actors.add(syncAgent.toLowerCase());
+  for (const m of maintainers) actors.add(m.toLowerCase());
 
   // GitHub cross-link: sync agent records it in status-event content
   const githubIssueUrl =
@@ -239,6 +259,8 @@ export async function fetchBoard(relay: Relay, myPubkey: string): Promise<BoardD
         channelId: tagValue(ev, "buzz-channel") ?? null,
         githubUrl: tagValue(ev, "web") ?? null,
         syncAgent: tagValue(ev, "sync-agent") ?? null,
+        maintainers: laneMaintainers(ev),
+        tags: ev.tags.map((t) => [...t]),
       }];
     })
     .sort((a, b) => a.name.localeCompare(b.name));
@@ -263,8 +285,9 @@ export async function fetchBoard(relay: Relay, myPubkey: string): Promise<BoardD
     for (const issue of issues) {
       const address = tagValue(issue, "a");
       if (address && cards.has(address)) {
+        const owning = laneByAddress.get(address);
         cards.get(address)!.push(
-          deriveCard(issue, statuses, nameWanted, laneByAddress.get(address)?.syncAgent ?? null),
+          deriveCard(issue, statuses, nameWanted, owning?.syncAgent ?? null, owning?.maintainers ?? []),
         );
       }
     }
@@ -570,14 +593,48 @@ export async function addBoardLinkToCanvas(
 export const laneBoardUrl = (origin: string, lane: { repoId: string }): string =>
   `${origin}/#lane-${lane.repoId}`;
 
-export async function attachChannel(
-  relay: Relay, signer: Signer, lane: Lane, channelId: string,
-): Promise<void> {
-  const tags: string[][] = [["d", lane.repoId], ["name", lane.name], ["buzz-channel", channelId]];
+/** Rebuild announcement tags from the modelled fields (lanes built without raw tags). */
+const laneTagsFromFields = (lane: Lane): string[][] => {
+  const tags: string[][] = [["d", lane.repoId], ["name", lane.name]];
+  if (lane.channelId) tags.push(["buzz-channel", lane.channelId]);
   if (lane.description) tags.push(["description", lane.description]);
   if (lane.githubUrl) tags.push(["web", lane.githubUrl]);
   if (lane.syncAgent) tags.push(["sync-agent", lane.syncAgent]);
-  await relay.submit(signer.signEvent(K.KIND_REPO_ANNOUNCEMENT, tags, ""));
+  if (lane.maintainers.length) tags.push(["maintainers", ...lane.maintainers]);
+  return tags;
+};
+
+/** Set a single-valued tag in place (first occurrence), dropping duplicates. */
+const withTag = (tags: string[][], name: string, value: string): string[][] => {
+  let placed = false;
+  const out: string[][] = [];
+  for (const t of tags) {
+    if (t[0] !== name) { out.push([...t]); continue; }
+    if (!placed) out.push([name, value]);
+    placed = true;
+  }
+  if (!placed) out.push([name, value]);
+  return out;
+};
+
+// Re-publishing a replaceable announcement must keep every tag (maintainers,
+// clone, relays, anything another client added), so start from the newest
+// announcement on the relay, then the lane's raw tags, and only change what
+// this action is about.
+async function republishLane(
+  relay: Relay, signer: Signer, lane: Lane, edit: (tags: string[][]) => string[][],
+): Promise<void> {
+  const current = latestPerCoord(await relay.query([{
+    kinds: [K.KIND_REPO_ANNOUNCEMENT], authors: [lane.owner], "#d": [lane.repoId], limit: 10,
+  }]))[0];
+  const base = current?.tags ?? (lane.tags.length ? lane.tags : laneTagsFromFields(lane));
+  await relay.submit(signer.signEvent(K.KIND_REPO_ANNOUNCEMENT, edit(base), current?.content ?? ""));
+}
+
+export async function attachChannel(
+  relay: Relay, signer: Signer, lane: Lane, channelId: string,
+): Promise<void> {
+  await republishLane(relay, signer, lane, (tags) => withTag(tags, "buzz-channel", channelId));
 }
 
 export async function deleteLane(relay: Relay, signer: Signer, lane: Lane): Promise<void> {

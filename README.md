@@ -111,6 +111,7 @@ already accepts:
 | Lane ↔ channel | `["buzz-channel", <uuid>]` on the announcement |
 | Lane ↔ GitHub | standard NIP-34 `["web", url]` + `["clone", url]` tags |
 | Lane sync agent | `["sync-agent", <pubkey>]` on the announcement |
+| Lane maintainers | standard NIP-34 `["maintainers", <pubkey>, ...]` on the announcement; maintainers move cards like the owner, and re-publishing a lane keeps every existing tag |
 | Card | kind 1621 issue (`a` = `30617:<owner>:<lane>`, `subject`, `t` labels) |
 | Column | NIP-34 status kinds 1630–1633 (+ `t:in-progress` / `t:in-review` on 1630) |
 | Vertical order | `["rank", <base36 fractional index>]` on the newest status event |
