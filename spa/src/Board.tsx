@@ -43,6 +43,7 @@ export function Board({ data, session, refresh, busyRef, optimisticMove }: {
   // Presentation only: keep stable lane identities across filtering and relay refreshes.
   const [collapsedLanes, setCollapsedLanes] = useState<Set<string>>(() => new Set());
   const boardId = useId();
+  const [showArchive, setShowArchive] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const dragging = useRef<{ cardId: string; lane: string } | null>(null);
 
@@ -85,7 +86,10 @@ export function Board({ data, session, refresh, busyRef, optimisticMove }: {
         (c.assignee ? nameOf(c.assignee).toLowerCase().includes(q) : false),
     );
   };
-  const visibleLanes = data.lanes.filter(laneMatches);
+  const visibleLanes = data.lanes
+    .filter((lane) => showArchive || !lane.hidden)
+    .filter(laneMatches);
+  const hiddenCount = data.lanes.filter((l) => l.hidden).length;
 
   function toggleLane(address: string) {
     setCollapsedLanes((previous) => {
@@ -164,6 +168,16 @@ export function Board({ data, session, refresh, busyRef, optimisticMove }: {
             <span className="muted">
               {visibleLanes.length} of {data.lanes.length} lanes
             </span>
+          )}
+          {hiddenCount > 0 && (
+            <label className="muted" style={{ display: "inline-flex", gap: "0.4rem", alignItems: "center" }}>
+              <input
+                type="checkbox"
+                checked={showArchive}
+                onChange={(e) => setShowArchive(e.target.checked)}
+              />
+              Show archive
+            </label>
           )}
         </div>
       )}
