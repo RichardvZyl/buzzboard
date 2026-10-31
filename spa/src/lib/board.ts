@@ -19,6 +19,14 @@ import type { Column } from "./kinds.ts";
 import { rankBetween } from "./rank.ts";
 import type { Signer, SignedEvent } from "./nostr.ts";
 import { Relay } from "./relay.ts";
+import {
+  KIND_LABEL,
+  isArchiveLane,
+  laneAddressBySlug,
+  mergeLabels,
+  privilegedPubkeys,
+  resolvePlacementSlug,
+} from "./overlays.ts";
 
 export interface Lane {
   address: string;
@@ -33,6 +41,8 @@ export interface Lane {
   maintainers: string[];
   /** raw announcement tags, so re-publishing keeps tags this client doesn't model */
   tags: string[][];
+  /** archive / hidden-by-default board (slug archive, or buzz-archive / hidden tags) */
+  hidden?: boolean;
 }
 
 /** "https://github.com/owner/repo[...]" -> "owner/repo" */
@@ -250,7 +260,7 @@ export async function fetchBoard(relay: Relay, myPubkey: string): Promise<BoardD
       if (!d) return [];
       const address = `30617:${ev.pubkey.toLowerCase()}:${d}`;
       if (tombstoned.has(address)) return [];
-      return [{
+      const lane: Lane = {
         address,
         owner: ev.pubkey.toLowerCase(),
         repoId: d,
@@ -261,7 +271,9 @@ export async function fetchBoard(relay: Relay, myPubkey: string): Promise<BoardD
         syncAgent: tagValue(ev, "sync-agent") ?? null,
         maintainers: laneMaintainers(ev),
         tags: ev.tags.map((t) => [...t]),
-      }];
+      };
+      lane.hidden = isArchiveLane(lane);
+      return [lane];
     })
     .sort((a, b) => a.name.localeCompare(b.name));
 
@@ -280,16 +292,35 @@ export async function fetchBoard(relay: Relay, myPubkey: string): Promise<BoardD
       ? await relay.query([{ kinds: K.STATUS_KINDS, "#e": ids, limit: 500 }])
       : [];
     const statuses = [...new Map([...byA, ...byE].map((ev) => [ev.id, ev])).values()];
+    const overlays = ids.length
+      ? await relay.query([
+        { kinds: [KIND_LABEL], "#e": ids, limit: 2000 },
+        { kinds: [KIND_LABEL], "#a": addresses, limit: 2000 },
+      ])
+      : [];
+    const overlayUniq = [...new Map(overlays.map((ev) => [ev.id, ev])).values()];
+    const privileged = privilegedPubkeys(lanes);
 
     const laneByAddress = new Map(lanes.map((l) => [l.address, l]));
     for (const issue of issues) {
-      const address = tagValue(issue, "a");
-      if (address && cards.has(address)) {
-        const owning = laneByAddress.get(address);
-        cards.get(address)!.push(
-          deriveCard(issue, statuses, nameWanted, owning?.syncAgent ?? null, owning?.maintainers ?? []),
-        );
-      }
+      const nativeAddress = tagValue(issue, "a");
+      if (!nativeAddress || !cards.has(nativeAddress)) continue;
+      const owning = laneByAddress.get(nativeAddress);
+      const card = deriveCard(
+        issue, statuses, nameWanted, owning?.syncAgent ?? null, owning?.maintainers ?? [],
+      );
+      const labelActors = new Set<string>([
+        issue.pubkey.toLowerCase(),
+        ...(owning ? [owning.owner, ...owning.maintainers] : []),
+        ...(card.assignee ? [card.assignee.toLowerCase()] : []),
+      ]);
+      card.labels = mergeLabels(card.labels, overlayUniq, issue.id, labelActors);
+      const placedSlug = resolvePlacementSlug(overlayUniq, issue.id, privileged);
+      const target = placedSlug
+        ? (laneAddressBySlug(lanes, placedSlug) ?? nativeAddress)
+        : nativeAddress;
+      if (cards.has(target)) cards.get(target)!.push(card);
+      else cards.get(nativeAddress)!.push(card);
     }
     for (const list of cards.values()) list.sort(cardOrder);
   }
