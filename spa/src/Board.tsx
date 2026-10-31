@@ -40,6 +40,7 @@ export function Board({ data, session, refresh, busyRef, optimisticMove }: {
   const [modal, setModalState] = useState<Modal>({ kind: "none" });
   const [dropTarget, setDropTarget] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  const [showArchive, setShowArchive] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const dragging = useRef<{ cardId: string; lane: string } | null>(null);
 
@@ -82,7 +83,10 @@ export function Board({ data, session, refresh, busyRef, optimisticMove }: {
         (c.assignee ? nameOf(c.assignee).toLowerCase().includes(q) : false),
     );
   };
-  const visibleLanes = data.lanes.filter(laneMatches);
+  const visibleLanes = data.lanes
+    .filter((lane) => showArchive || !lane.hidden)
+    .filter(laneMatches);
+  const hiddenCount = data.lanes.filter((l) => l.hidden).length;
 
   function onDrop(lane: Lane, column: Column, e: React.DragEvent) {
     e.preventDefault();
@@ -143,6 +147,16 @@ export function Board({ data, session, refresh, busyRef, optimisticMove }: {
             <span className="muted">
               {visibleLanes.length} of {data.lanes.length} lanes
             </span>
+          )}
+          {hiddenCount > 0 && (
+            <label className="muted" style={{ display: "inline-flex", gap: "0.4rem", alignItems: "center" }}>
+              <input
+                type="checkbox"
+                checked={showArchive}
+                onChange={(e) => setShowArchive(e.target.checked)}
+              />
+              Show archive
+            </label>
           )}
         </div>
       )}
