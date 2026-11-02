@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type MutableRefObject } from "react";
+import { useEffect, useId, useRef, useState, type MutableRefObject } from "react";
 import { COLUMNS, COLUMN_LABELS, type Column } from "./lib/kinds";
 import {
   addBoardLinkToCanvas, laneBoardUrl, moveCard,
@@ -6,7 +6,7 @@ import {
 } from "./lib/board";
 import { rankBetween } from "./lib/rank";
 import {
-  AlertIcon, BotIcon, CheckIcon, ClipboardIcon, GithubIcon, MessageIcon, PlusIcon,
+  AlertIcon, BotIcon, CheckIcon, ChevronRightIcon, ClipboardIcon, GithubIcon, MessageIcon, PlusIcon,
   SearchIcon, TrashIcon, XIcon,
 } from "./Icons";
 import type { Signer } from "./lib/nostr";
@@ -40,6 +40,9 @@ export function Board({ data, session, refresh, busyRef, optimisticMove }: {
   const [modal, setModalState] = useState<Modal>({ kind: "none" });
   const [dropTarget, setDropTarget] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  // Presentation only: keep stable lane identities across filtering and relay refreshes.
+  const [collapsedLanes, setCollapsedLanes] = useState<Set<string>>(() => new Set());
+  const boardId = useId();
   const searchRef = useRef<HTMLInputElement>(null);
   const dragging = useRef<{ cardId: string; lane: string } | null>(null);
 
@@ -83,6 +86,24 @@ export function Board({ data, session, refresh, busyRef, optimisticMove }: {
     );
   };
   const visibleLanes = data.lanes.filter(laneMatches);
+
+  function toggleLane(address: string) {
+    setCollapsedLanes((previous) => {
+      const next = new Set(previous);
+      if (next.has(address)) next.delete(address);
+      else next.add(address);
+      return next;
+    });
+  }
+
+  function newCard(lane: Lane) {
+    setCollapsedLanes((previous) => {
+      const next = new Set(previous);
+      next.delete(lane.address);
+      return next;
+    });
+    setModal({ kind: "new-card", lane });
+  }
 
   function onDrop(lane: Lane, column: Column, e: React.DragEvent) {
     e.preventDefault();
@@ -153,10 +174,22 @@ export function Board({ data, session, refresh, busyRef, optimisticMove }: {
         <p className="muted center">No lanes or cards match “{query}”.</p>
       )}
       {visibleLanes.map((lane) => (
-        <section key={lane.address} className="lane" id={`lane-${lane.repoId}`}>
+        <section key={lane.address} className="lane" id={`lane-${lane.repoId}`}
+                 data-collapsed={collapsedLanes.has(lane.address)}>
           <div className="lane-head">
             <div className="lane-info">
               <div className="lane-title-row">
+                <button
+                  type="button"
+                  className="icon-btn lane-toggle"
+                  aria-label={`${collapsedLanes.has(lane.address) ? "Expand" : "Collapse"} ${lane.name}`}
+                  title={`${collapsedLanes.has(lane.address) ? "Expand" : "Collapse"} ${lane.name}`}
+                  aria-expanded={!collapsedLanes.has(lane.address)}
+                  aria-controls={`${boardId}-${lane.address}`}
+                  onClick={() => toggleLane(lane.address)}
+                >
+                  <ChevronRightIcon />
+                </button>
                 <h2 className="lane-name">{lane.name}</h2>
                 <div className="lane-actions">
                   {lane.githubUrl && (
@@ -180,11 +213,12 @@ export function Board({ data, session, refresh, busyRef, optimisticMove }: {
               </div>
               {lane.description && <p className="lane-desc">{lane.description}</p>}
             </div>
-            <button className="ghost sm" onClick={() => setModal({ kind: "new-card", lane })}>
+            <button className="ghost sm" onClick={() => newCard(lane)}>
               <PlusIcon />Card
             </button>
           </div>
-          <div className="columns">
+          <div className="columns" id={`${boardId}-${lane.address}`}
+               hidden={collapsedLanes.has(lane.address)}>
             {COLUMNS.map((col) => {
               const cell = (data.cards.get(lane.address) ?? []).filter((c) => c.column === col);
               const cellKey = `${lane.address}:${col}`;

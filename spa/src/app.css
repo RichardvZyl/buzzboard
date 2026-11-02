@@ -222,6 +222,9 @@ svg { width: 1em; height: 1em; flex-shrink: 0; }
 .lane-info { min-width: 0; }
 .lane-title-row { display: flex; align-items: center; gap: 0.35rem; }
 .lane-name { font-size: 0.95rem; font-weight: 600; letter-spacing: -0.01em; }
+.lane-toggle { flex-shrink: 0; }
+.lane-toggle[aria-expanded="true"] svg { transform: rotate(90deg); }
+.lane[data-collapsed="true"] .lane-head { border-bottom: none; }
 .lane-actions { display: flex; align-items: center; gap: 0.15rem; margin-left: 0.35rem; }
 .lane-desc {
   margin-top: 0.05rem; font-size: 0.78rem; color: var(--muted-foreground);
@@ -234,6 +237,8 @@ button.sm svg { font-size: 0.8rem; }
   display: grid; grid-template-columns: repeat(6, minmax(9.5rem, 1fr));
   gap: 0.55rem; padding: 0.65rem;
 }
+/* Explicit because the grid display above overrides the browser's hidden default. */
+.columns[hidden] { display: none; }
 .column {
   background: var(--well); border-radius: calc(var(--radius) - 2px);
   padding: 0.45rem; min-height: 7.5rem; display: flex; flex-direction: column;
