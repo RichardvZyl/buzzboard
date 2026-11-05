@@ -1,0 +1,243 @@
+{
+  "ac": "AC2",
+  "leg": "qa-bot independent (QA bot run)",
+  "commitUnderTest": "586ffb5",
+  "cli": "a2a/buzz-board/tools/buzz-board.mjs (blob 5094ee947e57, identical to 586ffb5)",
+  "generated": "2026-10-22T17:13:27.320Z",
+  "approval": "Richard (BotFather), in chat: \"Run both AC2 and AC4\"",
+  "verdict": "PASS",
+  "checks": {
+    "post": {
+      "id": "58c9ac376229f9cdac1e5e1c0f25ed0d96920e1f236f785205f37e5904e2b0ed",
+      "kind": 1621,
+      "pubkey": "9bb4d8c5b4e759c1c3880a3d07d7e5af00742de04d72d89e687c9bea06f7e6fb",
+      "isQaBot": true,
+      "sigValid": true,
+      "refsIssue": null
+    },
+    "claim": {
+      "id": "c8a27b175fe8990ed1317d601cd8915cecf49f0a011d04d3363ffcd04c133d09",
+      "kind": 1630,
+      "pubkey": "9bb4d8c5b4e759c1c3880a3d07d7e5af00742de04d72d89e687c9bea06f7e6fb",
+      "isQaBot": true,
+      "sigValid": true,
+      "refsIssue": true
+    },
+    "close": {
+      "id": "77160c85e15dd6e2ba0f7fbfca3863251695690461b87aa6615ad8b7eda3661a",
+      "kind": 1632,
+      "pubkey": "9bb4d8c5b4e759c1c3880a3d07d7e5af00742de04d72d89e687c9bea06f7e6fb",
+      "isQaBot": true,
+      "sigValid": true,
+      "refsIssue": true
+    },
+    "getIssueSigValid": true,
+    "getStatusesSigValid": [
+      true,
+      true
+    ],
+    "getStatusIds": [
+      "77160c85e15dd6e2ba0f7fbfca3863251695690461b87aa6615ad8b7eda3661a",
+      "c8a27b175fe8990ed1317d601cd8915cecf49f0a011d04d3363ffcd04c133d09"
+    ],
+    "distinctFromPriorBots": {
+      "engineeringLead": "536e74f6f133",
+      "delegationBot": "b455c6c60ce9",
+      "qaBot": "9bb4d8c5b4e7",
+      "allDistinct": true
+    }
+  },
+  "raw": {
+    "whoami": {
+      "bot": "qa-bot",
+      "pubkey": "9bb4d8c5b4e759c1c3880a3d07d7e5af00742de04d72d89e687c9bea06f7e6fb",
+      "npub": "npub1nw6d33d5uavursugpg7s04l94uq8gt0qf4ed38ng0jd75phhumas85xejd"
+    },
+    "post": {
+      "id": "58c9ac376229f9cdac1e5e1c0f25ed0d96920e1f236f785205f37e5904e2b0ed",
+      "kind": 1621,
+      "pubkey": "9bb4d8c5b4e759c1c3880a3d07d7e5af00742de04d72d89e687c9bea06f7e6fb",
+      "npub": "npub1nw6d33d5uavursugpg7s04l94uq8gt0qf4ed38ng0jd75phhumas85xejd",
+      "created_at": 1792689152,
+      "tags": [
+        [
+          "a",
+          "30617:536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185:a2a-work"
+        ],
+        [
+          "p",
+          "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185"
+        ],
+        [
+          "subject",
+          "QA bot AC2 check 2026-10-22"
+        ],
+        [
+          "t",
+          "qa-test"
+        ]
+      ],
+      "content": "QA bot independent AC2 leg on commit 586ffb5: post, claim and close by qa-bot. Test card; safe to ignore.",
+      "sig": "c0ba170d691b42130da7d85029922c73c82a6de6c79ee63e550f6444d31c319e6e742aab1a4004a2a086ed1113c27c18abb90ffa8842ff7da6c2b1c9f21a6cb0"
+    },
+    "claim": {
+      "id": "c8a27b175fe8990ed1317d601cd8915cecf49f0a011d04d3363ffcd04c133d09",
+      "kind": 1630,
+      "pubkey": "9bb4d8c5b4e759c1c3880a3d07d7e5af00742de04d72d89e687c9bea06f7e6fb",
+      "npub": "npub1nw6d33d5uavursugpg7s04l94uq8gt0qf4ed38ng0jd75phhumas85xejd",
+      "created_at": 1792689162,
+      "tags": [
+        [
+          "e",
+          "58c9ac376229f9cdac1e5e1c0f25ed0d96920e1f236f785205f37e5904e2b0ed",
+          "",
+          "root"
+        ],
+        [
+          "a",
+          "30617:536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185:a2a-work"
+        ],
+        [
+          "p",
+          "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185"
+        ],
+        [
+          "t",
+          "in-progress"
+        ],
+        [
+          "assignee",
+          "9bb4d8c5b4e759c1c3880a3d07d7e5af00742de04d72d89e687c9bea06f7e6fb"
+        ]
+      ],
+      "content": "claimed by qa-bot",
+      "sig": "f408fda5876e380aeaebc8729e4a50bcd1a7545420642f0fdcbbf9ec1c5eb73341f62e1f89b4bb8c6fb0129cb120d64a9bbc9e67fa1038381de31a20d15193a6"
+    },
+    "close": {
+      "id": "77160c85e15dd6e2ba0f7fbfca3863251695690461b87aa6615ad8b7eda3661a",
+      "kind": 1632,
+      "pubkey": "9bb4d8c5b4e759c1c3880a3d07d7e5af00742de04d72d89e687c9bea06f7e6fb",
+      "npub": "npub1nw6d33d5uavursugpg7s04l94uq8gt0qf4ed38ng0jd75phhumas85xejd",
+      "created_at": 1792689162,
+      "tags": [
+        [
+          "e",
+          "58c9ac376229f9cdac1e5e1c0f25ed0d96920e1f236f785205f37e5904e2b0ed",
+          "",
+          "root"
+        ],
+        [
+          "a",
+          "30617:536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185:a2a-work"
+        ],
+        [
+          "p",
+          "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185"
+        ]
+      ],
+      "content": "closed by qa-bot",
+      "sig": "c57c118e121f1c0d24b43db9eb857c6290465dfe8965500a011c9d10dde72a941dbc52c98ba3e7c7d1036d3cdd49c3f25c9ffd910559e1efef1b7615fefc8170"
+    },
+    "get": {
+      "card": {
+        "id": "58c9ac376229f9cdac1e5e1c0f25ed0d96920e1f236f785205f37e5904e2b0ed",
+        "subject": "QA bot AC2 check 2026-10-22",
+        "author": "9bb4d8c5b4e759c1c3880a3d07d7e5af00742de04d72d89e687c9bea06f7e6fb",
+        "assignee": "9bb4d8c5b4e759c1c3880a3d07d7e5af00742de04d72d89e687c9bea06f7e6fb",
+        "column": "closed",
+        "labels": [
+          "qa-test"
+        ],
+        "fixture": null,
+        "statusEvents": 2
+      },
+      "issue": {
+        "id": "58c9ac376229f9cdac1e5e1c0f25ed0d96920e1f236f785205f37e5904e2b0ed",
+        "kind": 1621,
+        "pubkey": "9bb4d8c5b4e759c1c3880a3d07d7e5af00742de04d72d89e687c9bea06f7e6fb",
+        "npub": "npub1nw6d33d5uavursugpg7s04l94uq8gt0qf4ed38ng0jd75phhumas85xejd",
+        "created_at": 1792689152,
+        "tags": [
+          [
+            "a",
+            "30617:536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185:a2a-work"
+          ],
+          [
+            "p",
+            "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185"
+          ],
+          [
+            "subject",
+            "QA bot AC2 check 2026-10-22"
+          ],
+          [
+            "t",
+            "qa-test"
+          ]
+        ],
+        "content": "QA bot independent AC2 leg on commit 586ffb5: post, claim and close by qa-bot. Test card; safe to ignore.",
+        "sig": "c0ba170d691b42130da7d85029922c73c82a6de6c79ee63e550f6444d31c319e6e742aab1a4004a2a086ed1113c27c18abb90ffa8842ff7da6c2b1c9f21a6cb0"
+      },
+      "statuses": [
+        {
+          "id": "77160c85e15dd6e2ba0f7fbfca3863251695690461b87aa6615ad8b7eda3661a",
+          "kind": 1632,
+          "pubkey": "9bb4d8c5b4e759c1c3880a3d07d7e5af00742de04d72d89e687c9bea06f7e6fb",
+          "npub": "npub1nw6d33d5uavursugpg7s04l94uq8gt0qf4ed38ng0jd75phhumas85xejd",
+          "created_at": 1792689162,
+          "tags": [
+            [
+              "e",
+              "58c9ac376229f9cdac1e5e1c0f25ed0d96920e1f236f785205f37e5904e2b0ed",
+              "",
+              "root"
+            ],
+            [
+              "a",
+              "30617:536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185:a2a-work"
+            ],
+            [
+              "p",
+              "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185"
+            ]
+          ],
+          "content": "closed by qa-bot",
+          "sig": "c57c118e121f1c0d24b43db9eb857c6290465dfe8965500a011c9d10dde72a941dbc52c98ba3e7c7d1036d3cdd49c3f25c9ffd910559e1efef1b7615fefc8170"
+        },
+        {
+          "id": "c8a27b175fe8990ed1317d601cd8915cecf49f0a011d04d3363ffcd04c133d09",
+          "kind": 1630,
+          "pubkey": "9bb4d8c5b4e759c1c3880a3d07d7e5af00742de04d72d89e687c9bea06f7e6fb",
+          "npub": "npub1nw6d33d5uavursugpg7s04l94uq8gt0qf4ed38ng0jd75phhumas85xejd",
+          "created_at": 1792689162,
+          "tags": [
+            [
+              "e",
+              "58c9ac376229f9cdac1e5e1c0f25ed0d96920e1f236f785205f37e5904e2b0ed",
+              "",
+              "root"
+            ],
+            [
+              "a",
+              "30617:536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185:a2a-work"
+            ],
+            [
+              "p",
+              "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185"
+            ],
+            [
+              "t",
+              "in-progress"
+            ],
+            [
+              "assignee",
+              "9bb4d8c5b4e759c1c3880a3d07d7e5af00742de04d72d89e687c9bea06f7e6fb"
+            ]
+          ],
+          "content": "claimed by qa-bot",
+          "sig": "f408fda5876e380aeaebc8729e4a50bcd1a7545420642f0fdcbbf9ec1c5eb73341f62e1f89b4bb8c6fb0129cb120d64a9bbc9e67fa1038381de31a20d15193a6"
+        }
+      ]
+    }
+  }
+}

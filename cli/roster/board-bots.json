@@ -1,0 +1,479 @@
+{
+    "note":  "Public identities only. Secret keys live in a local secrets folder on the board host, never in a repo.",
+    "lane":  "30617:536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185:a2a-work",
+    "boardBots":  [
+                      {
+                          "bot":  "engineering-lead",
+                          "type":  "grok-bot",
+                          "display":  "Grok-Bot-Engineering-Lead",
+                          "pubkey":  "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185",
+                          "npub":  "npub12dh8fah3xw8fnnelteux0hc5y7ms9rvgmfe4tq9crc6tlenh6xzskvs7jq",
+                          "credential":  "A2A/BUZZ_ENGINEERING_LEAD_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "lane owner"
+                      },
+                      {
+                          "bot":  "delegation-bot",
+                          "type":  "grok-bot",
+                          "display":  "Grok-Bot-Delegation-Bot",
+                          "pubkey":  "b455c6c60ce9b8c77658e4f1535bb1432712c9394b3d85e838f933f88aee0dca",
+                          "npub":  "npub1k32ud3svaxuvwajcunc4xka3gvn39jfefv7ct6pclyel3zhwph9qxjw5mj",
+                          "credential":  "A2A/BUZZ_DELEGATION_BOT_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (lane channel member)"
+                      },
+                      {
+                          "bot":  "qa-bot",
+                          "type":  "grok-bot",
+                          "display":  "Grok-Bot-QA-Bot",
+                          "pubkey":  "9bb4d8c5b4e759c1c3880a3d07d7e5af00742de04d72d89e687c9bea06f7e6fb",
+                          "npub":  "npub1nw6d33d5uavursugpg7s04l94uq8gt0qf4ed38ng0jd75phhumas85xejd",
+                          "credential":  "A2A/BUZZ_QA_BOT_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (lane channel member)"
+                      },
+                      {
+                          "bot":  "projects-manager",
+                          "type":  "grok-bot",
+                          "display":  "Grok-Bot-Project-Manager",
+                          "pubkey":  "91471b1f6171e4f5c317b71312bcec43a9f3f73b6ea5a34660bfe68ced944da6",
+                          "npub":  "npub1j9r3k8mpw8j0tschkuf3908vgw5l8aemd6j6x3nqhlngemv5fknq5tkqy3",
+                          "credential":  "A2A/BUZZ_PROJECTS_MANAGER_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (lane channel member, added 2026-10-23 by Engineering Lead)"
+                      },
+                      {
+                          "bot":  "alfred",
+                          "type":  "grok-bot",
+                          "display":  "Grok-Bot-Alfred",
+                          "pubkey":  "511dd19bac05e2e0329dfb29fc2d4ad2b2c4d9ee3daaae8d2805b8f0b99c0695",
+                          "npub":  "npub12ywarxavqh3wqv5alv5lct2262evfk0w8k42arfgqku0pwvuq62sg4xx3m",
+                          "credential":  "A2A/BUZZ_ALFRED_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (lane channel member, added 2026-10-24 by Engineering Lead)"
+                      },
+                      {
+                          "bot":  "product-manager",
+                          "type":  "grok-bot",
+                          "display":  "Grok-Bot-Product-Manager",
+                          "pubkey":  "2d3b00330dc48969bc3498a1a653d6420d1a670c5f442954c5d64f042f4a8f28",
+                          "npub":  "npub195asqvcdcjykn0p5nzs6v57kggx35ecvtazzj4x96e8sgt623u5qwnspwj",
+                          "credential":  "A2A/BUZZ_PRODUCT_MANAGER_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (lane channel member, added 2026-10-24 by Engineering Lead)"
+                      },
+                      {
+                          "bot":  "design-bot",
+                          "type":  "grok-bot",
+                          "display":  "Grok-Bot-Design-Bot",
+                          "pubkey":  "6354c4ab67eb65bec77ddb9b7cedcb34197c55cc1eb6a0b7c4fdc08ec822325f",
+                          "npub":  "npub1vd2vf2m8adjma3mamwdhemwtxsvhc4wvr6m2pd7ylhqgajpzxf0samtutw",
+                          "credential":  "A2A/BUZZ_DESIGN_BOT_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (lane channel member, added 2026-10-24 by Engineering Lead)"
+                      },
+                      {
+                          "bot":  "senior-software-engineer",
+                          "type":  "grok-bot",
+                          "display":  "Grok-Bot-Senior-Software-Engineer",
+                          "pubkey":  "2ea7e3ac8d4a9d4dfdb7f7ed82e044140e0fd7b847cea57c417242ee3ca92dfc",
+                          "npub":  "npub196n78tydf2w5mldh7lkc9czyzs8ql4acgl822lzpwfpwu09f9h7qc0q460",
+                          "credential":  "A2A/BUZZ_SENIOR_SOFTWARE_ENGINEER_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (lane channel member, added 2026-10-24 by Engineering Lead)"
+                      },
+                      {
+                          "bot":  "wife-bot",
+                          "type":  "grok-bot",
+                          "display":  "Grok-Bot-<wife-name>-Bot",
+                          "pubkey":  "de603f200806956ad825da521c6beb97ff7ec6ef5d6549174e2f32de2365a07f",
+                          "npub":  "npub1mesr7gqgq62k4kp9mffpc6ltjllha3h0t4j5j96w9uedugm95plsy0d4qd",
+                          "credential":  "A2A/BUZZ_WIFE_BOT_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (lane channel member, added 2026-10-24 by Engineering Lead)"
+                      },
+                      {
+                          "bot":  "mcp-maintainer",
+                          "type":  "grok-bot",
+                          "display":  "Grok-Bot-MCP-Maintainer",
+                          "pubkey":  "a062fb0d39312771b158f42fde7d4bf4fbe604bd743442c91773e02345fdbb61",
+                          "npub":  "npub15p30krfexynhrv2c7shaul2t7na7vp9aws6y9jghw0szx30ahdss3avlnn",
+                          "credential":  "A2A/BUZZ_MCP_MAINTAINER_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (lane channel member, added 2026-10-24 by Engineering Lead)"
+                      },
+                      {
+                          "bot":  "local-inference",
+                          "type":  "grok-bot",
+                          "display":  "Grok-Bot-Local-Inference",
+                          "pubkey":  "dea179d70ba29cfecf5f2cadf63cb6f4aa0b78553a06a0bf47f41d16b5d2e294",
+                          "npub":  "npub1m6shn4ct52w0an6l9jklv09k7j4qk7z48gr2p0687sw3ddwju22q39tfr7",
+                          "credential":  "A2A/BUZZ_LOCAL_INFERENCE_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (lane channel member, added 2026-10-24 by Engineering Lead)"
+                      },
+                      {
+                          "bot":  "supervisor-bot",
+                          "type":  "grok-bot",
+                          "display":  "Grok-Bot-Supervisor-Bot",
+                          "pubkey":  "2f03208f12b4ff8e332b7c602d091cfee9f61eddc6fd060e6546936150250916",
+                          "npub":  "npub19upjprcjknlcuvet03sz6zgulm5lv8kacm7svrn9g6fkz5p9pytqxsykzj",
+                          "credential":  "A2A/BUZZ_SUPERVISOR_BOT_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (lane channel member, added 2026-10-24 by Engineering Lead)"
+                      },
+                      {
+                          "bot":  "a2a-setup-bot",
+                          "type":  "grok-bot",
+                          "display":  "Grok-Bot-A2A-Setup-bot",
+                          "pubkey":  "84c14741f1c8f6688d3e629a5094abdf389a6ec5274b442e7eff0569c4e0c4c4",
+                          "npub":  "npub1snq5ws03ermx3rf7v2d9p99tmuuf5mk9ya95gtn7luzkn38qcnzqe92z38",
+                          "credential":  "A2A/BUZZ_A2A_SETUP_BOT_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (lane channel member, added 2026-10-24 by Engineering Lead)"
+                      },
+                      {
+                          "bot":  "jules-fake",
+                          "type":  "grok-bot",
+                          "display":  "Grok-Bot-Jules-Fake",
+                          "pubkey":  "731dfad564302d6fd6e9f95094922b3b4f47159458cc99cbee452c253d014362",
+                          "npub":  "npub1wvwl44tyxqkkl4hfl9gffy3t8d85w9v5trxfnjlwg5kz20gpgd3qpmcr0x",
+                          "credential":  "A2A/BUZZ_JULES_FAKE_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (lane channel member, added 2026-10-24 by Engineering Lead)"
+                      },
+                      {
+                          "bot":  "skill-maintainer",
+                          "type":  "grok-bot",
+                          "display":  "Grok-Bot-Skill-Maintainer",
+                          "pubkey":  "e61ae6c4c16620c6c95e85576f07ba3e97cad051a14a15cf059035fdcad2f809",
+                          "npub":  "npub1ucdwd3xpvcsvdj27s4tk7pa686tu45z3599ptnc9jq6lmjkjlqysfv0mr3",
+                          "credential":  "A2A/BUZZ_SKILL_MAINTAINER_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (lane channel member, added 2026-10-24 by Engineering Lead)"
+                      },
+                      {
+                          "bot":  "general-bot",
+                          "type":  "grok-bot",
+                          "display":  "Grok-Bot-General-Bot",
+                          "pubkey":  "d96d9cc65d26c57bbf15b476b9c81265560b3b3a856c3ec84a53f7d37e0c439f",
+                          "npub":  "npub1m9kee3jaymzhh0c4k3mtnjqjv4tqkwe6s4krajz220maxlsvgw0swjpmwr",
+                          "credential":  "A2A/BUZZ_GENERAL_BOT_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (lane channel member, added 2026-10-24 by Engineering Lead)"
+                      },
+                      {
+                          "bot":  "pm-bot",
+                          "type":  "grok-bot",
+                          "display":  "Grok-Bot-PM-bot",
+                          "pubkey":  "882b63e6b5e9ac4bb1de5ec07d90b5a62eadd22ffd234ffc91f2dc76a55f8f16",
+                          "npub":  "npub13q4k8e44axkyhvw7tmq8my945ch2m530l535lly37tw8df2l3utql0errg",
+                          "credential":  "A2A/BUZZ_PM_BOT_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (lane channel member, added 2026-10-24 by Engineering Lead)"
+                      },
+                      {
+                          "bot":  "swe-bot",
+                          "type":  "grok-bot",
+                          "display":  "Grok-Bot-SWE",
+                          "pubkey":  "0d2c874ca9a39367306a15d72c0e1be777e32611f8b71faf78c584e9931cd032",
+                          "npub":  "npub1p5kgwn9f5wfkwvr2zhtjcrsmuam7xfs3lzm3ltmcckzwnycu6qeqvy7dz5",
+                          "credential":  "A2A/BUZZ_SWE_BOT_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (lane channel member, added 2026-10-24 by Engineering Lead)"
+                      },
+                      {
+                          "bot":  "figma-bro",
+                          "type":  "grok-bot",
+                          "display":  "Grok-Bot-figma-bro",
+                          "pubkey":  "340a36c3fe27881a7d32ddec000436781d5b59dee71408055b33bbaf3595c958",
+                          "npub":  "npub1xs9rdsl7y7yp5lfjmhkqqppk0qw4kkw7uu2qsp2mxwa67dv4e9vqtg33dh",
+                          "credential":  "A2A/BUZZ_FIGMA_BRO_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (lane channel member, added 2026-10-24 by Engineering Lead)"
+                      },
+                      {
+                          "bot":  "lingxi-engineer-bot",
+                          "type":  "grok-bot",
+                          "display":  "Grok-Bot-Lingxis-Engineer-Bot",
+                          "pubkey":  "d8cac3148142a5a60e7d439c00da73055f2080c9a5f0823c243ea4f50cdf8ff4",
+                          "npub":  "npub1mr9vx9ypg2j6vrnagwwqpknnq40jpqxf5hcgy0py86j02rxl3l6qkxpzdw",
+                          "credential":  "A2A/BUZZ_LINGXI_ENGINEER_BOT_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (lane channel member, added 2026-10-24 by Engineering Lead)"
+                      },
+                      {
+                          "bot":  "cursor",
+                          "type":  "a2a",
+                          "display":  "cursor/default (cursor-agent)",
+                          "pubkey":  "1124dbacbabd9cc6b552f04d7bfd101cdbfe91874d36c234ef680ceb7b6524b5",
+                          "npub":  "npub1zyjdht96hkwvdd2j7pxhhlgsrndlayv8f5mvyd80dqxwk7m9yj6smdgqxj",
+                          "credential":  "A2A/BUZZ_CURSOR_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (lane channel member, added 2026-10-24 by Engineering Lead)"
+                      },
+                      {
+                          "bot":  "claude-haiku",
+                          "type":  "a2a",
+                          "display":  "anthropic/claude-haiku (claude-code)",
+                          "pubkey":  "0ed0e07caa052394d81eacfd33203b93b2255c4dff686154a21e5913d04ad2e1",
+                          "npub":  "npub1pmgwql92q53efkq74n7nxgpmjwez2hzdla5xz49zrev385z26tss54a224",
+                          "credential":  "A2A/BUZZ_CLAUDE_HAIKU_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (lane channel member, added 2026-10-24 by Engineering Lead)"
+                      },
+                      {
+                          "bot":  "claude-sonnet",
+                          "type":  "a2a",
+                          "display":  "anthropic/claude-sonnet (claude-code)",
+                          "pubkey":  "59c84c1af2a9175eab7484ebf968a10ea8a10c3e7c7b83d2195054eeab93ab16",
+                          "npub":  "npub1t8yycxhj4yt4a2m5sn4lj69pp652zrp703ac85se2p2wa2un4vtqdvshjc",
+                          "credential":  "A2A/BUZZ_CLAUDE_SONNET_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (lane channel member, added 2026-10-24 by Engineering Lead)"
+                      },
+                      {
+                          "bot":  "claude-opus",
+                          "type":  "a2a",
+                          "display":  "anthropic/claude-opus (claude-code)",
+                          "pubkey":  "2c70f49ccd4a9072342694eaf38bcf717bc229c6caf63192e74a8f146f1911ea",
+                          "npub":  "npub193c0f8xdf2g8ydpxjn408z70w9auy2wxetmrryh8f283gmcez84qqc8xa2",
+                          "credential":  "A2A/BUZZ_CLAUDE_OPUS_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (lane channel member, added 2026-10-24 by Engineering Lead)"
+                      },
+                      {
+                          "bot":  "cline",
+                          "type":  "a2a",
+                          "display":  "cline/default (cline-cli)",
+                          "pubkey":  "a2235241cb4f62751186642b109bedb6e18b89d2c8f6417b6fef091d7898d7b3",
+                          "npub":  "npub15g34yswtfa382yvxvs43pxldkmschzwjermyz7m0auy367yc67es6xjp3j",
+                          "credential":  "A2A/BUZZ_CLINE_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (lane channel member, added 2026-10-24 by Engineering Lead)"
+                      },
+                      {
+                          "bot":  "devin",
+                          "type":  "a2a",
+                          "display":  "cognition/default (devin-cli)",
+                          "pubkey":  "0d5e926827906b964086c170efe6a7753b0d6924f16dc36d23af20b4b566b68a",
+                          "npub":  "npub1p40fy6p8jp4evsyxc9cwle48w5as66fy79kuxmfr4ustfdtxk69qqv0znz",
+                          "credential":  "A2A/BUZZ_DEVIN_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (lane channel member, added 2026-10-24 by Engineering Lead)"
+                      },
+                      {
+                          "bot":  "grok",
+                          "type":  "a2a",
+                          "display":  "xai/grok-4.7 (grok-cli)",
+                          "pubkey":  "69ff133d213e1e9025f67d0930ead5f04a9f6168e57308f8c0e6927046c203b6",
+                          "npub":  "npub1d8l3x0fp8c0fqf0k05ynp6k47p9f7ctgu4es37xqu6f8q3kzqwmq8r2852",
+                          "credential":  "A2A/BUZZ_GROK_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (lane channel member, added 2026-10-24 by Engineering Lead)"
+                      },
+                      {
+                          "bot":  "hermes",
+                          "type":  "a2a",
+                          "display":  "nous/default-profile (hermes-agent)",
+                          "pubkey":  "66199f641df36ff51a6b3aba87aec0e74787da01a7c2eb212374b491d4eaa25e",
+                          "npub":  "npub1vcve7eqa7dhl2xnt82ag0tkquarc0ksp5lpwkgfrwj6fr4825f0q8gn5ym",
+                          "credential":  "A2A/BUZZ_HERMES_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (lane channel member, added 2026-10-24 by Engineering Lead)"
+                      },
+                      {
+                          "bot":  "copilot",
+                          "type":  "a2a",
+                          "display":  "github/default (copilot-cli)",
+                          "pubkey":  "e9851b7961edf61bfdf035be1f19a311a6daca1714b38a24c59531d856382a2d",
+                          "npub":  "npub1axz3k7tpahmphl0sxklp7xdrzxnd4jshzjec5fx9j5cas43c9gkskw5035",
+                          "credential":  "A2A/BUZZ_COPILOT_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (lane channel member, added 2026-10-24 by Engineering Lead)"
+                      },
+                      {
+                          "bot":  "jules",
+                          "type":  "a2a",
+                          "display":  "google/jules (jules-cli)",
+                          "pubkey":  "f026ed3e44b93e5f8de7af24b36376f34506e5524243ce11bf1c299f7d041c66",
+                          "npub":  "npub17qnw60jyhyl9lr084ujtxcmk7dzsde2jgfpuuydlrs5e7lgyr3nqgvy7rs",
+                          "credential":  "A2A/BUZZ_JULES_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (lane channel member, added 2026-10-24 by Engineering Lead)"
+                      },
+                      {
+                          "bot":  "agy",
+                          "type":  "a2a",
+                          "display":  "google/default (antigravity-cli)",
+                          "pubkey":  "9aa8936a59a412c071e093de25ec1e96756a815bd3462a7e2f39d5979de7f873",
+                          "npub":  "npub1n25fx6je5sfvqu0qj00ztmq7je6k4q2m6drz5l30882e0808lpeslh2703",
+                          "credential":  "A2A/BUZZ_AGY_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (lane channel member, added 2026-10-24 by Engineering Lead)"
+                      },
+                      {
+                          "bot":  "codex",
+                          "type":  "a2a",
+                          "display":  "openai/codex (codex-cli)",
+                          "pubkey":  "efae050f79f59a13f89dce9279aa89e10e2135412672d8e147368dda1749d214",
+                          "npub":  "npub1a7hq2rme7kdp87yae6f8n25fuy8zzd2pyeed3c28x6xa596f6g2qhnu2gs",
+                          "credential":  "A2A/BUZZ_CODEX_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (lane channel member, added 2026-10-24 by Engineering Lead)"
+                      },
+                      {
+                          "bot":  "spec-project-manager",
+                          "type":  "a2a",
+                          "display":  "Project Manager (general specialist)",
+                          "pubkey":  "96e312b30c61aa2eff18dade2f94f61fc43451ad4181f546493faf32b7e7e193",
+                          "npub":  "npub1jm339vcvvx4zalccmt0zl98krlzrg5ddgxql23jf87hn9dl8uxfsgyl255",
+                          "credential":  "A2A/BUZZ_SPEC_PROJECT_MANAGER_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (KTK Play lane channel member, added 2026-10-24 by Projects Manager; removed from the A2A work channel 2026-10-24 by Engineering Lead)",
+                          "lane":  "ktk-play"
+                      },
+                      {
+                          "bot":  "spec-product-manager",
+                          "type":  "a2a",
+                          "display":  "Product Manager (general specialist)",
+                          "pubkey":  "643db75431e4de563e42d5edccf0ea840a2c764bdce9d2208c59b6541cf9b303",
+                          "npub":  "npub1vs7mw4p3un09v0jz6hkueu82ss9zcajtmn5aygyvtxm9g88ekvpslsl4r3",
+                          "credential":  "A2A/BUZZ_SPEC_PRODUCT_MANAGER_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (KTK Play lane channel member, added 2026-10-24 by Projects Manager; removed from the A2A work channel 2026-10-24 by Engineering Lead)",
+                          "lane":  "ktk-play"
+                      },
+                      {
+                          "bot":  "spec-qa",
+                          "type":  "a2a",
+                          "display":  "QA (general specialist)",
+                          "pubkey":  "c31e138c8a340a546f2ae2e5114a939c98624f49bd1362d56ad68b65f1b068dd",
+                          "npub":  "npub1cv0p8ry2xs99gme2utj3zj5nnjvxyn6fh5fk94t2669ktudsdrwsemy805",
+                          "credential":  "A2A/BUZZ_SPEC_QA_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (KTK Play lane channel member, added 2026-10-24 by Projects Manager; removed from the A2A work channel 2026-10-24 by Engineering Lead)",
+                          "lane":  "ktk-play"
+                      },
+                      {
+                          "bot":  "spec-swe",
+                          "type":  "a2a",
+                          "display":  "SWE (general specialist)",
+                          "pubkey":  "e9e9c7111c29ed4db2e689a34b45ab991f301ded52b80e227d62e40d48051b0f",
+                          "npub":  "npub1a85uwygu98k5mvhx3x35k3dtny0nq80d22uqugnavtjq6jq9rv8sh8hs55",
+                          "credential":  "A2A/BUZZ_SPEC_SWE_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (KTK Play lane channel member, added 2026-10-24 by Projects Manager; removed from the A2A work channel 2026-10-24 by Engineering Lead)",
+                          "lane":  "ktk-play"
+                      },
+                      {
+                          "bot":  "spec-tech-lead",
+                          "type":  "a2a",
+                          "display":  "Technical Lead (general specialist)",
+                          "pubkey":  "e7cab63ba457e4d77d5b069734dea7309a9551047c4ea51357bdf48e51b234da",
+                          "npub":  "npub1ul9tvway2ljdwl2mq6tnfh48xzdf25gy03822y6hhh6gu5djxndq8npl0w",
+                          "credential":  "A2A/BUZZ_SPEC_TECH_LEAD_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (KTK Play lane channel member, added 2026-10-24 by Projects Manager; removed from the A2A work channel 2026-10-24 by Engineering Lead)",
+                          "lane":  "ktk-play"
+                      },
+                      {
+                          "bot":  "spec-expression-builder",
+                          "type":  "a2a",
+                          "display":  "Expression Builder (project specialist: Orchestration Engine)",
+                          "pubkey":  "44e9f3a6b0e0cb7c521d2224bc9e3fc90606bd4a4fb9fd9bba090529929c4d71",
+                          "npub":  "npub1gn5l8f4sur9hc5saygjte83leyrqd022f7ulmxa6pyzjny5uf4csfuy84s",
+                          "credential":  "A2A/BUZZ_SPEC_EXPRESSION_BUILDER_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (KTK Play lane channel member, added 2026-10-24 by Projects Manager; removed from the A2A work channel 2026-10-24 by Engineering Lead)",
+                          "lane":  "ktk-play"
+                      },
+                      {
+                          "bot":  "spec-source-generator-engineer",
+                          "type":  "a2a",
+                          "display":  "Source Generator Engineer (project specialist: EFRepo)",
+                          "pubkey":  "8afb84048f5b8c48d197c236d62e1d3984152d3188901c61d5900672c9f4e595",
+                          "npub":  "npub13tacgpy0twxy35vhcgmdvtsa8xzp2tf33zgpccw4jqr89j05uk2ss6kw52",
+                          "credential":  "A2A/BUZZ_SPEC_SOURCE_GENERATOR_ENGINEER_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (KTK Play lane channel member, added 2026-10-24 by Projects Manager; removed from the A2A work channel 2026-10-24 by Engineering Lead)",
+                          "lane":  "ktk-play"
+                      },
+                      {
+                          "bot":  "spec-api-engineer",
+                          "type":  "a2a",
+                          "display":  "API Engineer (project specialist: SDK abstraction)",
+                          "pubkey":  "3228c8a7285b4d8c2b32666636b127dcc28ff284004f350994ef87e3c611be33",
+                          "npub":  "npub1xg5v3fegtdxcc2ejvenrdvf8mnpglu5yqp8n2zv5a7r783s3hces63c0gm",
+                          "credential":  "A2A/BUZZ_SPEC_API_ENGINEER_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (KTK Play lane channel member, added 2026-10-24 by Projects Manager; removed from the A2A work channel 2026-10-24 by Engineering Lead)",
+                          "lane":  "ktk-play"
+                      },
+                      {
+                          "bot":  "m365-copilot",
+                          "type":  "a2a",
+                          "display":  "microsoft/m365-copilot (stub)",
+                          "pubkey":  "463a352cad37545f370665bfb56fb6b866771f011fb3d0fb86942b5679200d2a",
+                          "npub":  "npub1gcar2t9dxa297dcxvklm2makhpn8w8cpr7eap7uxjs44v7fqp54q47qnrm",
+                          "credential":  "A2A/BUZZ_M365_COPILOT_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (lane channel member, added 2026-10-24 by Engineering Lead)"
+                      },
+                      {
+                          "bot":  "devin-sandbox-pilot",
+                          "type":  "a2a",
+                          "display":  "cognition/default (devin-cli, sandbox pilot)",
+                          "pubkey":  "a3a2c3575a421ff3b46b28c4a6342623999c1c26de8fa93969e9cc381ce108ea",
+                          "npub":  "npub15w3vx466gg0l8drt9rz2vdpxywvec8pxm686jwtfa8xrs88ppr4ql8f5qc",
+                          "credential":  "A2A/BUZZ_DEVIN_SANDBOX_PILOT_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (lane channel member, added 2026-10-24 by Engineering Lead)"
+                      },
+                      {
+                          "bot":  "switchboard",
+                          "type":  "a2a",
+                          "display":  "A2A-Switchboard",
+                          "pubkey":  "8a77ed3a4283ce8bfbd434732993928d4b6ab83d3a32e9e7a7d7fd649bd84412",
+                          "npub":  "npub13fm76wjzs08gh775x3ejnyuj349k4wpa8gewnea86l7kfx7cgsfqe50m33",
+                          "credential":  "A2A/BUZZ_SWITCHBOARD_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (lane channel member, added 2026-10-24 by Engineering Lead)"
+                      }
+                  ],
+    "existingPeerIdentities":  "Unchanged. The 14 A2A peer identities and the recorder/silo/BotFather identities already on the relay (see the roster doc outside this repo) can be card assignees on the board as they are; they do not post to the board yet (OPEN: peer wiring).",
+    "retiredNotOnBoard":  "gemini-flash, gemini-pro, cline-mimo-v2-6-flash still have keys and relay membership (removal is Cleanup #8, blocked on Richard); OpenClaw/AutoClaw have no identity. Not listed as board bots.",
+    "updated":  "2026-10-24 by Projects Manager (Grok Bot): KTK Play lane created; 8 spec-* specialists moved to it and removed from A2A work; BotFather made owner of KTK Play channel",
+    "humans":  [
+                   {
+                       "name":  "BotFather",
+                       "pubkey":  "0e517135c3076e4c171ade45b6366a7536d4b6e2d8eb13eb27d2337eb01e187d",
+                       "role":  "Owner (human; relay owner, board admin)",
+                       "note":  "Human identity used by the Buzz desktop app; kind-0 name must be set from the Buzz app because only its key can sign it."
+                   }
+               ],
+    "a2aWorkChannel":  {
+                           "name":  "A2A work",
+                           "channel":  "470b7646-778b-4967-8fc3-627d6e12798a",
+                           "owners":  [
+                                          "engineering-lead (536e74f6...)",
+                                          "unidentified 5eb45cfc... (Cleanup #7)"
+                                      ],
+                           "members":  34,
+                           "bots":  31,
+                           "botFatherRole":  "member (admin/owner grant pending Engineering Lead)",
+                           "updated":  "2026-10-24: 8 spec-* specialists removed by Engineering Lead"
+                       },
+    "ktkPlayLane":  {
+                        "name":  "KTK Play",
+                        "address":  "30617:91471b1f6171e4f5c317b71312bcec43a9f3f73b6ea5a34660bfe68ced944da6:ktk-play",
+                        "channel":  "18ab8eb6-9698-46f1-a89b-896197dc498c",
+                        "owner":  "projects-manager",
+                        "admins":  [
+                                       "BotFather (0e517135..., channel role owner since 2026-10-24)"
+                                   ],
+                        "members":  "the 8 spec-* specialists (role bot)",
+                        "created":  "2026-10-24 by Projects Manager (Grok Bot)",
+                        "cliConfig":  "set BUZZ_BOARD_CONFIG to a local config whose lane is {owner: projects-manager pubkey, d: ktk-play}; default config stays on a2a-work"
+                    }
+}

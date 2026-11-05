@@ -1,0 +1,561 @@
+{
+  "ac": "AC4",
+  "kind": "extra evidence only (re-import idempotency; outside the cut, does not change the AC4 verdict)",
+  "commitUnderTest": "586ffb5",
+  "generated": "2026-10-22T17:13:27.322Z",
+  "fixture": "a2a/buzz-board/fixtures/a2a-sprint-2026-10-22.json",
+  "fixtureId": "a2a-sprint-2026-10-22@4555c7ffe0bd",
+  "before": {
+    "totalCards": 15,
+    "sprintCards": 11,
+    "distinctRows": 11,
+    "duplicateRows": [],
+    "ids": [
+      "1de3a01baf90651d9ce0d34ac1dc504c965550b80fe8cf99900a422bc1549a88",
+      "3af591403b4f3de2b0f583c21af10446787ec21be1fbb27f5f87b7e42065b7c9",
+      "3e9a895dc0c1038d9322a70ed17cd2139c2eb5302591710e5087d9ef53d89626",
+      "6be847b5325d697bda0cb19e514c91a2f3de3272dea3dc01cff4ceb7bb38a2b1",
+      "7670e07bc12834f398a77a7e74a3342437ff720f82da14f95cf94cf5f1c7b86b",
+      "79a5494836e58bff1bbe27d37ff1f722989522376ffd0a94b8b7772529bf18e7",
+      "79bdf3c6245d258a9271ae55f5ff33e6891ea880b7fcaec11e69b24a69821e1b",
+      "80f36d52963d13978e8fcd5aeb309cc9b820ba0f1213fafd1ce4881070e5f0c2",
+      "a5611843e0f83f26e696b246d1e611dcf399c04cde7376ae0f3b59bc2c5be7ef",
+      "bd4c6124ef9d520b69bd3e685460d39bcb465e7c3d733b633a9d45887273c18d",
+      "fc64b8dbc06d032e56315a834f1e6baa4570f2e06175fba4616b92f062c9a5ba"
+    ]
+  },
+  "after": {
+    "totalCards": 15,
+    "sprintCards": 11,
+    "distinctRows": 11,
+    "duplicateRows": [],
+    "ids": [
+      "1de3a01baf90651d9ce0d34ac1dc504c965550b80fe8cf99900a422bc1549a88",
+      "3af591403b4f3de2b0f583c21af10446787ec21be1fbb27f5f87b7e42065b7c9",
+      "3e9a895dc0c1038d9322a70ed17cd2139c2eb5302591710e5087d9ef53d89626",
+      "6be847b5325d697bda0cb19e514c91a2f3de3272dea3dc01cff4ceb7bb38a2b1",
+      "7670e07bc12834f398a77a7e74a3342437ff720f82da14f95cf94cf5f1c7b86b",
+      "79a5494836e58bff1bbe27d37ff1f722989522376ffd0a94b8b7772529bf18e7",
+      "79bdf3c6245d258a9271ae55f5ff33e6891ea880b7fcaec11e69b24a69821e1b",
+      "80f36d52963d13978e8fcd5aeb309cc9b820ba0f1213fafd1ce4881070e5f0c2",
+      "a5611843e0f83f26e696b246d1e611dcf399c04cde7376ae0f3b59bc2c5be7ef",
+      "bd4c6124ef9d520b69bd3e685460d39bcb465e7c3d733b633a9d45887273c18d",
+      "fc64b8dbc06d032e56315a834f1e6baa4570f2e06175fba4616b92f062c9a5ba"
+    ]
+  },
+  "importNewWrites": 0,
+  "idsUnchanged": true,
+  "idsMatchOriginalImport": true,
+  "idempotent": true,
+  "raw": {
+    "listBefore": {
+      "lane": "30617:536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185:a2a-work",
+      "cards": [
+        {
+          "id": "58c9ac376229f9cdac1e5e1c0f25ed0d96920e1f236f785205f37e5904e2b0ed",
+          "subject": "QA bot AC2 check 2026-10-22",
+          "author": "9bb4d8c5b4e759c1c3880a3d07d7e5af00742de04d72d89e687c9bea06f7e6fb",
+          "assignee": "9bb4d8c5b4e759c1c3880a3d07d7e5af00742de04d72d89e687c9bea06f7e6fb",
+          "column": "closed",
+          "labels": [
+            "qa-test"
+          ],
+          "fixture": null,
+          "statusEvents": 2
+        },
+        {
+          "id": "79a5494836e58bff1bbe27d37ff1f722989522376ffd0a94b8b7772529bf18e7",
+          "subject": "PM T5",
+          "author": "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185",
+          "assignee": null,
+          "column": "closed",
+          "labels": [
+            "sprint-2026-10-22"
+          ],
+          "fixture": [
+            "fixture",
+            "a2a-sprint-2026-10-22@4555c7ffe0bd",
+            "x1"
+          ],
+          "statusEvents": 1
+        },
+        {
+          "id": "7670e07bc12834f398a77a7e74a3342437ff720f82da14f95cf94cf5f1c7b86b",
+          "subject": "PM T3: front-door model pin draft",
+          "author": "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185",
+          "assignee": null,
+          "column": "done",
+          "labels": [
+            "sprint-2026-10-22"
+          ],
+          "fixture": [
+            "fixture",
+            "a2a-sprint-2026-10-22@4555c7ffe0bd",
+            "9"
+          ],
+          "statusEvents": 1
+        },
+        {
+          "id": "79bdf3c6245d258a9271ae55f5ff33e6891ea880b7fcaec11e69b24a69821e1b",
+          "subject": "PM T4: doc drift report",
+          "author": "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185",
+          "assignee": null,
+          "column": "done",
+          "labels": [
+            "sprint-2026-10-22"
+          ],
+          "fixture": [
+            "fixture",
+            "a2a-sprint-2026-10-22@4555c7ffe0bd",
+            "10"
+          ],
+          "statusEvents": 1
+        },
+        {
+          "id": "fc64b8dbc06d032e56315a834f1e6baa4570f2e06175fba4616b92f062c9a5ba",
+          "subject": "PM T2: peer readiness matrix",
+          "author": "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185",
+          "assignee": null,
+          "column": "done",
+          "labels": [
+            "sprint-2026-10-22"
+          ],
+          "fixture": [
+            "fixture",
+            "a2a-sprint-2026-10-22@4555c7ffe0bd",
+            "8"
+          ],
+          "statusEvents": 1
+        },
+        {
+          "id": "a5611843e0f83f26e696b246d1e611dcf399c04cde7376ae0f3b59bc2c5be7ef",
+          "subject": "PM T1: turn-chain hash check",
+          "author": "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185",
+          "assignee": null,
+          "column": "done",
+          "labels": [
+            "sprint-2026-10-22"
+          ],
+          "fixture": [
+            "fixture",
+            "a2a-sprint-2026-10-22@4555c7ffe0bd",
+            "7"
+          ],
+          "statusEvents": 1
+        },
+        {
+          "id": "3e9a895dc0c1038d9322a70ed17cd2139c2eb5302591710e5087d9ef53d89626",
+          "subject": "Cloud-agents plan + Grok Bot agent cards",
+          "author": "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185",
+          "assignee": null,
+          "column": "done",
+          "labels": [
+            "sprint-2026-10-22"
+          ],
+          "fixture": [
+            "fixture",
+            "a2a-sprint-2026-10-22@4555c7ffe0bd",
+            "6"
+          ],
+          "statusEvents": 1
+        },
+        {
+          "id": "80f36d52963d13978e8fcd5aeb309cc9b820ba0f1213fafd1ce4881070e5f0c2",
+          "subject": "ChatNow consultant design",
+          "author": "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185",
+          "assignee": null,
+          "column": "done",
+          "labels": [
+            "sprint-2026-10-22"
+          ],
+          "fixture": [
+            "fixture",
+            "a2a-sprint-2026-10-22@4555c7ffe0bd",
+            "5"
+          ],
+          "statusEvents": 1
+        },
+        {
+          "id": "1de3a01baf90651d9ce0d34ac1dc504c965550b80fe8cf99900a422bc1549a88",
+          "subject": "A2A map update",
+          "author": "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185",
+          "assignee": null,
+          "column": "backlog",
+          "labels": [
+            "sprint-2026-10-22",
+            "halted"
+          ],
+          "fixture": [
+            "fixture",
+            "a2a-sprint-2026-10-22@4555c7ffe0bd",
+            "4"
+          ],
+          "statusEvents": 0
+        },
+        {
+          "id": "6be847b5325d697bda0cb19e514c91a2f3de3272dea3dc01cff4ceb7bb38a2b1",
+          "subject": "Switchyard routes.toml draft + peer-shim spec",
+          "author": "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185",
+          "assignee": null,
+          "column": "done",
+          "labels": [
+            "sprint-2026-10-22"
+          ],
+          "fixture": [
+            "fixture",
+            "a2a-sprint-2026-10-22@4555c7ffe0bd",
+            "3"
+          ],
+          "statusEvents": 1
+        },
+        {
+          "id": "bd4c6124ef9d520b69bd3e685460d39bcb465e7c3d733b633a9d45887273c18d",
+          "subject": "OpenShell Devin pilot drafts",
+          "author": "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185",
+          "assignee": null,
+          "column": "done",
+          "labels": [
+            "sprint-2026-10-22"
+          ],
+          "fixture": [
+            "fixture",
+            "a2a-sprint-2026-10-22@4555c7ffe0bd",
+            "2"
+          ],
+          "statusEvents": 1
+        },
+        {
+          "id": "3af591403b4f3de2b0f583c21af10446787ec21be1fbb27f5f87b7e42065b7c9",
+          "subject": "PR #3 personal-info cleanup",
+          "author": "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185",
+          "assignee": null,
+          "column": "done",
+          "labels": [
+            "sprint-2026-10-22"
+          ],
+          "fixture": [
+            "fixture",
+            "a2a-sprint-2026-10-22@4555c7ffe0bd",
+            "1"
+          ],
+          "statusEvents": 1
+        },
+        {
+          "id": "58ac18dfe6571f8dbbf1d5659a4458e105aa67cbb0e78c33cb397f58d2874a09",
+          "subject": "AC2 test task posted by qa-bot",
+          "author": "9bb4d8c5b4e759c1c3880a3d07d7e5af00742de04d72d89e687c9bea06f7e6fb",
+          "assignee": "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185",
+          "column": "closed",
+          "labels": [
+            "ac2-test"
+          ],
+          "fixture": null,
+          "statusEvents": 2
+        },
+        {
+          "id": "e5394235a9a3fd86d6da28dee423f8b52021a32d5e8318340081d311a89b6ecb",
+          "subject": "AC2 test task posted by delegation-bot",
+          "author": "b455c6c60ce9b8c77658e4f1535bb1432712c9394b3d85e838f933f88aee0dca",
+          "assignee": "9bb4d8c5b4e759c1c3880a3d07d7e5af00742de04d72d89e687c9bea06f7e6fb",
+          "column": "closed",
+          "labels": [
+            "ac2-test"
+          ],
+          "fixture": null,
+          "statusEvents": 2
+        },
+        {
+          "id": "b099f32cd8f2c2618f1a8e9392599f9e2376dfd898e4b0f79f513639215ab098",
+          "subject": "AC2 test task posted by engineering-lead",
+          "author": "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185",
+          "assignee": "b455c6c60ce9b8c77658e4f1535bb1432712c9394b3d85e838f933f88aee0dca",
+          "column": "closed",
+          "labels": [
+            "ac2-test"
+          ],
+          "fixture": null,
+          "statusEvents": 2
+        }
+      ]
+    },
+    "import": {
+      "fixtureId": "a2a-sprint-2026-10-22@4555c7ffe0bd",
+      "results": [
+        {
+          "row": "1",
+          "skipped": "already imported"
+        },
+        {
+          "row": "2",
+          "skipped": "already imported"
+        },
+        {
+          "row": "3",
+          "skipped": "already imported"
+        },
+        {
+          "row": "4",
+          "skipped": "already imported"
+        },
+        {
+          "row": "5",
+          "skipped": "already imported"
+        },
+        {
+          "row": "6",
+          "skipped": "already imported"
+        },
+        {
+          "row": "7",
+          "skipped": "already imported"
+        },
+        {
+          "row": "8",
+          "skipped": "already imported"
+        },
+        {
+          "row": "9",
+          "skipped": "already imported"
+        },
+        {
+          "row": "10",
+          "skipped": "already imported"
+        },
+        {
+          "row": "x1",
+          "skipped": "already imported"
+        }
+      ]
+    },
+    "listAfter": {
+      "lane": "30617:536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185:a2a-work",
+      "cards": [
+        {
+          "id": "58c9ac376229f9cdac1e5e1c0f25ed0d96920e1f236f785205f37e5904e2b0ed",
+          "subject": "QA bot AC2 check 2026-10-22",
+          "author": "9bb4d8c5b4e759c1c3880a3d07d7e5af00742de04d72d89e687c9bea06f7e6fb",
+          "assignee": "9bb4d8c5b4e759c1c3880a3d07d7e5af00742de04d72d89e687c9bea06f7e6fb",
+          "column": "closed",
+          "labels": [
+            "qa-test"
+          ],
+          "fixture": null,
+          "statusEvents": 2
+        },
+        {
+          "id": "79a5494836e58bff1bbe27d37ff1f722989522376ffd0a94b8b7772529bf18e7",
+          "subject": "PM T5",
+          "author": "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185",
+          "assignee": null,
+          "column": "closed",
+          "labels": [
+            "sprint-2026-10-22"
+          ],
+          "fixture": [
+            "fixture",
+            "a2a-sprint-2026-10-22@4555c7ffe0bd",
+            "x1"
+          ],
+          "statusEvents": 1
+        },
+        {
+          "id": "7670e07bc12834f398a77a7e74a3342437ff720f82da14f95cf94cf5f1c7b86b",
+          "subject": "PM T3: front-door model pin draft",
+          "author": "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185",
+          "assignee": null,
+          "column": "done",
+          "labels": [
+            "sprint-2026-10-22"
+          ],
+          "fixture": [
+            "fixture",
+            "a2a-sprint-2026-10-22@4555c7ffe0bd",
+            "9"
+          ],
+          "statusEvents": 1
+        },
+        {
+          "id": "79bdf3c6245d258a9271ae55f5ff33e6891ea880b7fcaec11e69b24a69821e1b",
+          "subject": "PM T4: doc drift report",
+          "author": "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185",
+          "assignee": null,
+          "column": "done",
+          "labels": [
+            "sprint-2026-10-22"
+          ],
+          "fixture": [
+            "fixture",
+            "a2a-sprint-2026-10-22@4555c7ffe0bd",
+            "10"
+          ],
+          "statusEvents": 1
+        },
+        {
+          "id": "fc64b8dbc06d032e56315a834f1e6baa4570f2e06175fba4616b92f062c9a5ba",
+          "subject": "PM T2: peer readiness matrix",
+          "author": "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185",
+          "assignee": null,
+          "column": "done",
+          "labels": [
+            "sprint-2026-10-22"
+          ],
+          "fixture": [
+            "fixture",
+            "a2a-sprint-2026-10-22@4555c7ffe0bd",
+            "8"
+          ],
+          "statusEvents": 1
+        },
+        {
+          "id": "a5611843e0f83f26e696b246d1e611dcf399c04cde7376ae0f3b59bc2c5be7ef",
+          "subject": "PM T1: turn-chain hash check",
+          "author": "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185",
+          "assignee": null,
+          "column": "done",
+          "labels": [
+            "sprint-2026-10-22"
+          ],
+          "fixture": [
+            "fixture",
+            "a2a-sprint-2026-10-22@4555c7ffe0bd",
+            "7"
+          ],
+          "statusEvents": 1
+        },
+        {
+          "id": "3e9a895dc0c1038d9322a70ed17cd2139c2eb5302591710e5087d9ef53d89626",
+          "subject": "Cloud-agents plan + Grok Bot agent cards",
+          "author": "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185",
+          "assignee": null,
+          "column": "done",
+          "labels": [
+            "sprint-2026-10-22"
+          ],
+          "fixture": [
+            "fixture",
+            "a2a-sprint-2026-10-22@4555c7ffe0bd",
+            "6"
+          ],
+          "statusEvents": 1
+        },
+        {
+          "id": "80f36d52963d13978e8fcd5aeb309cc9b820ba0f1213fafd1ce4881070e5f0c2",
+          "subject": "ChatNow consultant design",
+          "author": "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185",
+          "assignee": null,
+          "column": "done",
+          "labels": [
+            "sprint-2026-10-22"
+          ],
+          "fixture": [
+            "fixture",
+            "a2a-sprint-2026-10-22@4555c7ffe0bd",
+            "5"
+          ],
+          "statusEvents": 1
+        },
+        {
+          "id": "1de3a01baf90651d9ce0d34ac1dc504c965550b80fe8cf99900a422bc1549a88",
+          "subject": "A2A map update",
+          "author": "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185",
+          "assignee": null,
+          "column": "backlog",
+          "labels": [
+            "sprint-2026-10-22",
+            "halted"
+          ],
+          "fixture": [
+            "fixture",
+            "a2a-sprint-2026-10-22@4555c7ffe0bd",
+            "4"
+          ],
+          "statusEvents": 0
+        },
+        {
+          "id": "6be847b5325d697bda0cb19e514c91a2f3de3272dea3dc01cff4ceb7bb38a2b1",
+          "subject": "Switchyard routes.toml draft + peer-shim spec",
+          "author": "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185",
+          "assignee": null,
+          "column": "done",
+          "labels": [
+            "sprint-2026-10-22"
+          ],
+          "fixture": [
+            "fixture",
+            "a2a-sprint-2026-10-22@4555c7ffe0bd",
+            "3"
+          ],
+          "statusEvents": 1
+        },
+        {
+          "id": "bd4c6124ef9d520b69bd3e685460d39bcb465e7c3d733b633a9d45887273c18d",
+          "subject": "OpenShell Devin pilot drafts",
+          "author": "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185",
+          "assignee": null,
+          "column": "done",
+          "labels": [
+            "sprint-2026-10-22"
+          ],
+          "fixture": [
+            "fixture",
+            "a2a-sprint-2026-10-22@4555c7ffe0bd",
+            "2"
+          ],
+          "statusEvents": 1
+        },
+        {
+          "id": "3af591403b4f3de2b0f583c21af10446787ec21be1fbb27f5f87b7e42065b7c9",
+          "subject": "PR #3 personal-info cleanup",
+          "author": "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185",
+          "assignee": null,
+          "column": "done",
+          "labels": [
+            "sprint-2026-10-22"
+          ],
+          "fixture": [
+            "fixture",
+            "a2a-sprint-2026-10-22@4555c7ffe0bd",
+            "1"
+          ],
+          "statusEvents": 1
+        },
+        {
+          "id": "58ac18dfe6571f8dbbf1d5659a4458e105aa67cbb0e78c33cb397f58d2874a09",
+          "subject": "AC2 test task posted by qa-bot",
+          "author": "9bb4d8c5b4e759c1c3880a3d07d7e5af00742de04d72d89e687c9bea06f7e6fb",
+          "assignee": "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185",
+          "column": "closed",
+          "labels": [
+            "ac2-test"
+          ],
+          "fixture": null,
+          "statusEvents": 2
+        },
+        {
+          "id": "e5394235a9a3fd86d6da28dee423f8b52021a32d5e8318340081d311a89b6ecb",
+          "subject": "AC2 test task posted by delegation-bot",
+          "author": "b455c6c60ce9b8c77658e4f1535bb1432712c9394b3d85e838f933f88aee0dca",
+          "assignee": "9bb4d8c5b4e759c1c3880a3d07d7e5af00742de04d72d89e687c9bea06f7e6fb",
+          "column": "closed",
+          "labels": [
+            "ac2-test"
+          ],
+          "fixture": null,
+          "statusEvents": 2
+        },
+        {
+          "id": "b099f32cd8f2c2618f1a8e9392599f9e2376dfd898e4b0f79f513639215ab098",
+          "subject": "AC2 test task posted by engineering-lead",
+          "author": "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185",
+          "assignee": "b455c6c60ce9b8c77658e4f1535bb1432712c9394b3d85e838f933f88aee0dca",
+          "column": "closed",
+          "labels": [
+            "ac2-test"
+          ],
+          "fixture": null,
+          "statusEvents": 2
+        }
+      ]
+    }
+  }
+}
