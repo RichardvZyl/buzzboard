@@ -1,0 +1,311 @@
+{
+  "version": 1,
+  "relayUrlEnv": "BUZZ_RELAY_URL",
+  "defaultRelayUrlFile": "%LOCALAPPDATA%\\buzz-board\\config.json -> relayUrlFile",
+  "managedAgentsPath": "%APPDATA%\\xyz.block.buzz.app\\agents\\managed-agents.json",
+  "teamsPath": "%APPDATA%\\xyz.block.buzz.app\\agents\\teams.json",
+  "bridgeCommand": "node",
+  "bridgeScript": "scripts/desktop-agents/a2a-bridge-agent.mjs",
+  "teams": [
+    {
+      "id": "team:a2a-peers",
+      "name": "A2A Peers",
+      "description": "Live A2A network peers reached through the front door.",
+      "memberSlugs": [
+        "codex",
+        "cursor",
+        "claude",
+        "cline",
+        "devin",
+        "grok",
+        "kimi-k3",
+        "copilot",
+        "agy",
+        "jules",
+        "openclaw"
+      ]
+    },
+    {
+      "id": "team:grok-bots",
+      "name": "Grok Bots",
+      "description": "Grok Bot accounts on the estate.",
+      "memberSlugs": [
+        "delegation-bot",
+        "engineering-lead",
+        "supervisor-bot",
+        "projects-manager",
+        "product-manager",
+        "swe-bot",
+        "qa-bot",
+        "audit",
+        "angelique-bot",
+        "figma-bro",
+        "import-bot"
+      ]
+    },
+    {
+      "id": "team:engineering",
+      "name": "Engineering",
+      "description": "Engineering peers and bots.",
+      "memberSlugs": [
+        "claude",
+        "codex",
+        "cursor",
+        "devin",
+        "engineering-lead",
+        "swe-bot",
+        "qa-bot"
+      ]
+    }
+  ],
+  "agents": [
+    {
+      "slug": "codex",
+      "displayName": "openai/codex (codex-cli)",
+      "kind": "a2a-peer",
+      "credential": "A2A/BUZZ_CODEX_SECRET_KEY",
+      "a2aSlug": "codex",
+      "teams": ["team:a2a-peers", "team:engineering"],
+      "modelOptions": [],
+      "systemPrompt": "You are the Codex A2A peer. Route work through the A2A front door as slug codex."
+    },
+    {
+      "slug": "cursor",
+      "displayName": "cursor/default (cursor-agent)",
+      "kind": "a2a-peer",
+      "credential": "A2A/BUZZ_CURSOR_SECRET_KEY",
+      "a2aSlug": "cursor",
+      "teams": ["team:a2a-peers", "team:engineering"],
+      "modelOptions": [],
+      "systemPrompt": "You are the Cursor A2A peer. Route work through the A2A front door as slug cursor."
+    },
+    {
+      "slug": "claude",
+      "displayName": "anthropic/claude (claude-code)",
+      "kind": "a2a-peer",
+      "credential": "A2A/BUZZ_CLAUDE_SECRET_KEY",
+      "a2aSlug": "claude",
+      "teams": ["team:a2a-peers", "team:engineering"],
+      "modelOptions": [
+        { "id": "sonnet", "default": true, "note": "default CLI model" },
+        { "id": "opus", "default": false, "note": "opus advisor / escalate" }
+      ],
+      "systemPrompt": "You are the Claude A2A peer (one identity). Default model sonnet; use opus as advisor when asked. Route via front door slug claude."
+    },
+    {
+      "slug": "cline",
+      "displayName": "cline/default (cline-cli)",
+      "kind": "a2a-peer",
+      "credential": "A2A/BUZZ_CLINE_SECRET_KEY",
+      "a2aSlug": "cline",
+      "teams": ["team:a2a-peers"],
+      "modelOptions": [
+        { "id": "default", "default": true },
+        { "id": "mimo", "default": false, "note": "mimo model option" }
+      ],
+      "systemPrompt": "You are the Cline A2A peer. Support a mimo model option when requested. Route via front door slug cline."
+    },
+    {
+      "slug": "devin",
+      "displayName": "cognition/default (devin-cli)",
+      "kind": "a2a-peer",
+      "credential": "A2A/BUZZ_DEVIN_SECRET_KEY",
+      "a2aSlug": "devin",
+      "teams": ["team:a2a-peers", "team:engineering"],
+      "modelOptions": [],
+      "systemPrompt": "You are the Devin A2A peer. Route via front door slug devin."
+    },
+    {
+      "slug": "grok",
+      "displayName": "xai/grok (grok-cli)",
+      "kind": "a2a-peer",
+      "credential": "A2A/BUZZ_GROK_SECRET_KEY",
+      "a2aSlug": "grok",
+      "teams": ["team:a2a-peers"],
+      "modelOptions": [],
+      "systemPrompt": "You are the Grok A2A peer. Route via front door slug grok."
+    },
+    {
+      "slug": "kimi-k3",
+      "displayName": "moonshot/kimi-k3",
+      "kind": "a2a-peer",
+      "credential": "A2A/BUZZ_KIMI_K3_SECRET_KEY",
+      "a2aSlug": "kimi-k3",
+      "teams": ["team:a2a-peers"],
+      "modelOptions": [],
+      "systemPrompt": "You are the Kimi K3 A2A peer. Route via front door slug kimi-k3.",
+      "identityStatus": "missing-credential-at-authoring"
+    },
+    {
+      "slug": "copilot",
+      "displayName": "github/default (copilot-cli)",
+      "kind": "a2a-peer",
+      "credential": "A2A/BUZZ_COPILOT_SECRET_KEY",
+      "a2aSlug": "copilot",
+      "teams": ["team:a2a-peers"],
+      "modelOptions": [],
+      "systemPrompt": "You are the Copilot A2A peer. Route via front door slug copilot."
+    },
+    {
+      "slug": "agy",
+      "displayName": "google/default (antigravity-cli)",
+      "kind": "a2a-peer",
+      "credential": "A2A/BUZZ_AGY_SECRET_KEY",
+      "a2aSlug": "agy",
+      "teams": ["team:a2a-peers"],
+      "modelOptions": [],
+      "systemPrompt": "You are the Agy (Antigravity) A2A peer. Route via front door slug agy."
+    },
+    {
+      "slug": "jules",
+      "displayName": "google/jules (jules-cli)",
+      "kind": "a2a-peer",
+      "credential": "A2A/BUZZ_JULES_SECRET_KEY",
+      "a2aSlug": "jules",
+      "teams": ["team:a2a-peers"],
+      "modelOptions": [],
+      "systemPrompt": "You are the Jules A2A peer. Route via front door slug jules."
+    },
+    {
+      "slug": "openclaw",
+      "displayName": "openclaw",
+      "kind": "a2a-peer",
+      "credential": "A2A/BUZZ_OPENCLAW_SECRET_KEY",
+      "a2aSlug": "openclaw",
+      "teams": ["team:a2a-peers"],
+      "modelOptions": [],
+      "systemPrompt": "You are the OpenClaw A2A peer.",
+      "identityStatus": "no-buzz-identity-roster-disabled"
+    },
+    {
+      "slug": "delegation-bot",
+      "displayName": "Grok-Bot-Delegation-Bot",
+      "kind": "grok-bot",
+      "credential": "A2A/BUZZ_DELEGATION_BOT_SECRET_KEY",
+      "a2aSlug": "delegation-bot",
+      "teams": ["team:grok-bots"],
+      "modelOptions": [
+        { "id": "father", "default": true, "webhookCredUrl": "A2A/DELEGATION_BOT_WEBHOOK_URL_FATHER", "webhookCredAuth": "A2A/DELEGATION_BOT_WEBHOOK_AUTH_FATHER" },
+        { "id": "pro", "default": false, "webhookCredUrl": "A2A/DELEGATION_BOT_WEBHOOK_URL_PRO", "webhookCredAuth": "A2A/DELEGATION_BOT_WEBHOOK_AUTH_PRO" }
+      ],
+      "systemPrompt": "You are Delegation Bot. Default father; pro is a model option. Prefer A2A slug delegation-bot-father / delegation-bot-pro when present, else Grok webhook."
+    },
+    {
+      "slug": "engineering-lead",
+      "displayName": "Grok-Bot-Engineering-Lead",
+      "kind": "grok-bot",
+      "credential": "A2A/BUZZ_ENGINEERING_LEAD_SECRET_KEY",
+      "a2aSlug": "engineering-lead",
+      "teams": ["team:grok-bots", "team:engineering"],
+      "modelOptions": [],
+      "systemPrompt": "You are Engineering Lead (Grok Bot). Route via A2A slug engineering-lead when available."
+    },
+    {
+      "slug": "supervisor-bot",
+      "displayName": "Grok-Bot-Supervisor-Bot",
+      "kind": "grok-bot",
+      "credential": "A2A/BUZZ_SUPERVISOR_BOT_SECRET_KEY",
+      "a2aSlug": "supervisor",
+      "teams": ["team:grok-bots"],
+      "modelOptions": [],
+      "systemPrompt": "You are Supervisor Bot. Route via A2A slug supervisor when available."
+    },
+    {
+      "slug": "projects-manager",
+      "displayName": "Grok-Bot-Project-Manager",
+      "kind": "grok-bot",
+      "credential": "A2A/BUZZ_PROJECTS_MANAGER_SECRET_KEY",
+      "a2aSlug": "project-manager",
+      "teams": ["team:grok-bots"],
+      "modelOptions": [],
+      "systemPrompt": "You are Project Manager (Grok Bot). Route via A2A slug project-manager when available."
+    },
+    {
+      "slug": "product-manager",
+      "displayName": "Grok-Bot-Product-Manager",
+      "kind": "grok-bot",
+      "credential": "A2A/BUZZ_PRODUCT_MANAGER_SECRET_KEY",
+      "a2aSlug": "product-manager",
+      "teams": ["team:grok-bots"],
+      "modelOptions": [],
+      "systemPrompt": "You are Product Manager (Grok Bot). Route via A2A slug product-manager when available."
+    },
+    {
+      "slug": "swe-bot",
+      "displayName": "Grok-Bot-SWE",
+      "kind": "grok-bot",
+      "credential": "A2A/BUZZ_SWE_BOT_SECRET_KEY",
+      "a2aSlug": "swe",
+      "teams": ["team:grok-bots", "team:engineering"],
+      "modelOptions": [],
+      "systemPrompt": "You are SWE (Grok Bot). Route via A2A slug swe when available."
+    },
+    {
+      "slug": "qa-bot",
+      "displayName": "Grok-Bot-QA-Bot",
+      "kind": "grok-bot",
+      "credential": "A2A/BUZZ_QA_BOT_SECRET_KEY",
+      "a2aSlug": "qa",
+      "teams": ["team:grok-bots", "team:engineering"],
+      "modelOptions": [],
+      "systemPrompt": "You are QA Bot. Route via A2A slug qa when available."
+    },
+    {
+      "slug": "audit",
+      "displayName": "Grok-Bot-SE-Bot-Audit",
+      "kind": "grok-bot",
+      "credential": "A2A/BUZZ_AUDIT_SECRET_KEY",
+      "a2aSlug": "audit",
+      "teams": ["team:grok-bots"],
+      "modelOptions": [],
+      "systemPrompt": "You are SE Bot Audit. Route via A2A slug audit when available.",
+      "identityStatus": "missing-credential-at-authoring"
+    },
+    {
+      "slug": "angelique-bot",
+      "displayName": "Grok-Bot-Angelique",
+      "kind": "grok-bot",
+      "credential": "A2A/BUZZ_ANGELIQUE_BOT_SECRET_KEY",
+      "a2aSlug": "angelique",
+      "teams": ["team:grok-bots"],
+      "modelOptions": [],
+      "systemPrompt": "You are Angelique Bot. Route via A2A slug angelique when available."
+    },
+    {
+      "slug": "figma-bro",
+      "displayName": "Grok-Bot-figma-bro",
+      "kind": "grok-bot",
+      "credential": "A2A/BUZZ_FIGMA_BRO_SECRET_KEY",
+      "a2aSlug": null,
+      "teams": ["team:grok-bots"],
+      "modelOptions": [],
+      "systemPrompt": "You are figma bro (Grok Bot). No A2A peer slug; webhook wiring TBD.",
+      "wireStatus": "no-a2a-slug-no-webhook-cred"
+    },
+    {
+      "slug": "import-bot",
+      "displayName": "Grok-Bot-Import-Bot",
+      "kind": "grok-bot",
+      "credential": "A2A/BUZZ_IMPORT_BOT_SECRET_KEY",
+      "a2aSlug": null,
+      "teams": ["team:grok-bots"],
+      "modelOptions": [],
+      "systemPrompt": "You are Import Bot.",
+      "identityStatus": "missing-credential-at-authoring"
+    }
+  ],
+  "skipped": [
+    {
+      "slug": "devin-sandbox-pilot",
+      "reason": "disabled per task"
+    },
+    {
+      "slug": "m365-copilot",
+      "reason": "disabled per task"
+    },
+    {
+      "slug": "gemini",
+      "reason": "disabled per task"
+    }
+  ]
+}
