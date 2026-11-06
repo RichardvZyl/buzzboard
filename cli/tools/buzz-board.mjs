@@ -37,12 +37,24 @@
 //   import --as <bot> --fixture <file.json>   idempotent import (tag ["fixture", id, row])
 import {createRequire} from 'node:module';
 import {createHash, randomBytes, randomUUID} from 'node:crypto';
-import {execFileSync} from 'node:child_process';
+import {execFileSync, spawn} from 'node:child_process';
 import {existsSync, readFileSync} from 'node:fs';
-import {join} from 'node:path';
-import {pathToFileURL} from 'node:url';
+import {dirname, join} from 'node:path';
+import {fileURLToPath, pathToFileURL} from 'node:url';
 
 const die = (msg, code = 1) => { process.stderr.write(`buzz-board: ${msg}\n`); process.exit(code); };
+const __dirname = dirname(fileURLToPath(import.meta.url));
+/** Best-effort A2A notify fan-out; never fails the primary board command. */
+function enqueueNotify(bot, issueId, change, detail, triggeringEventId) {
+  try {
+    const script = join(__dirname, 'buzz-notify-deliver.mjs');
+    if (!existsSync(script)) return;
+    const argv = [script, '--as', bot, '--issue', issueId, '--change', change];
+    if (detail) argv.push('--detail', String(detail));
+    if (triggeringEventId) argv.push('--triggering-event', triggeringEventId);
+    spawn(process.execPath, argv, {detached: true, stdio: 'ignore', windowsHide: true}).unref();
+  } catch { /* ignore */ }
+}
 const cfgPath = process.env.BUZZ_BOARD_CONFIG || join(process.env.LOCALAPPDATA || join(process.env.HOME || '.', '.local', 'share'), 'buzz-board', 'config.json');
 if (!existsSync(cfgPath)) die(`config not found (${cfgPath ? 'set BUZZ_BOARD_CONFIG' : ''})`);
 const cfg = JSON.parse(readFileSync(cfgPath, 'utf8').replace(/^\uFEFF/, ''));
@@ -309,10 +321,25 @@ switch (cmd) {
   case 'claim': {
     const s = loadSigner(args.as);
     const id = await resolveIssueId(s);
-    out(brief(await submit(s, s.sign(K.OPEN, statusTags(id, [['t', 'in-progress'], ['assignee', s.pubkey]]), args.note || `claimed by ${s.bot}`)))); break;
+    const ev = await submit(s, s.sign(K.OPEN, statusTags(id, [['t', 'in-progress'], ['assignee', s.pubkey]]), args.note || `claimed by ${s.bot}`));
+    enqueueNotify(s.bot, id, 'in_progress', args.note, ev.id);
+    enqueueNotify(s.bot, id, 'assignee', args.note, ev.id);
+    out(brief(ev)); break;
   }
-  case 'resolve': { const s = loadSigner(args.as); const id = await resolveIssueId(s); out(brief(await submit(s, s.sign(K.RESOLVED, statusTags(id), args.note || `resolved by ${s.bot}`)))); break; }
-  case 'close': { const s = loadSigner(args.as); const id = await resolveIssueId(s); out(brief(await submit(s, s.sign(K.CLOSED, statusTags(id), args.note || `closed by ${s.bot}`)))); break; }
+  case 'resolve': {
+    const s = loadSigner(args.as); const id = await resolveIssueId(s);
+    const ev = await submit(s, s.sign(K.RESOLVED, statusTags(id), args.note || `resolved by ${s.bot}`));
+    // Assignee resolve → In Review; author/owner resolve → Done. Fan both; subscriptions filter.
+    enqueueNotify(s.bot, id, 'in_review', args.note, ev.id);
+    enqueueNotify(s.bot, id, 'done', args.note, ev.id);
+    out(brief(ev)); break;
+  }
+  case 'close': {
+    const s = loadSigner(args.as); const id = await resolveIssueId(s);
+    const ev = await submit(s, s.sign(K.CLOSED, statusTags(id), args.note || `closed by ${s.bot}`));
+    enqueueNotify(s.bot, id, 'closed', args.note, ev.id);
+    out(brief(ev)); break;
+  }
   case 'list': {
     const s = loadSigner(args.as); const {issues, statuses, maintainers} = await fetchCards(s);
     out(args.raw ? {issues: issues.map(brief), statuses: statuses.map(brief), maintainers} : {lane: laneAddress(), maintainers, cards: issues.map((i) => derive(i, statuses, maintainers))}); break;
