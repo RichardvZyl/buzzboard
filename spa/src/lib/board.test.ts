@@ -380,7 +380,7 @@ const lane: Lane = {
 const card: Card = {
   id: "e".repeat(64), subject: "Fix login", body: "", labels: [], author: OWNER,
   createdAt: 1, updatedAt: 1, column: "backlog", blocked: false, rank: null,
-  assignee: null, threadLink: null, githubIssueUrl: null,
+  assignee: null, threadLink: null, githubIssueUrl: null, notifications: [],
 };
 const tagsOf = (e: SignedEvent, name: string) =>
   e.tags.filter((t) => t[0] === name).map((t) => t.slice(1));
