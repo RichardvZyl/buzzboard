@@ -19,6 +19,15 @@ import type { Column } from "./kinds.ts";
 import { rankBetween } from "./rank.ts";
 import type { Signer, SignedEvent } from "./nostr.ts";
 import { Relay } from "./relay.ts";
+import {
+  columnToNotifyEvent,
+  formatNotifyMessage,
+  matchingRecipients,
+  notifyTags,
+  parseNotifySubscriptions,
+  type NotifyChange,
+  type NotifySubscription,
+} from "./notify.ts";
 
 export interface Lane {
   address: string;
@@ -53,6 +62,8 @@ export interface Card {
   assignee: string | null;
   threadLink: string | null;
   githubIssueUrl: string | null;
+  /** Per-card Notify agents subscriptions (from status `notify` tags). */
+  notifications: NotifySubscription[];
 }
 
 export interface Agent {
@@ -206,6 +217,7 @@ function deriveCard(
     assignee,
     threadLink: dispatchTag ? `buzz://message?channel=${dispatchTag[2]}&id=${dispatchTag[1]}` : null,
     githubIssueUrl,
+    notifications: parseNotifySubscriptions(referencing, issue.id),
   };
 }
 
@@ -429,7 +441,57 @@ export async function moveCard(
   const rank = rankBetween(neighbors.before?.rank ?? "", neighbors.after?.rank ?? "");
   const extra: string[][] = labels.map((l) => ["t", l]);
   extra.push(["rank", rank]);
+  // Keep notify tags on the moving status so a later non-notify status
+  // does not strand readers that only look at the tip event.
+  extra.push(...notifyTags(card.notifications));
+  const status = signer.signEvent(kind, statusTags(card, lane, extra), "");
+  await relay.submit(status);
+  if (column !== card.column) {
+    await emitCardNotifications(relay, signer, lane, card, {
+      type: columnToNotifyEvent(column),
+      cardId: card.id,
+      subject: card.subject,
+      detail: `- column: ${card.column} → ${column}`,
+      triggeringEventId: status.id,
+    });
+  }
+}
+
+/** Persist Notify agents subscriptions on the card (status tags). */
+export async function saveCardNotifications(
+  relay: Relay, signer: Signer, lane: Lane, card: Card,
+  subscriptions: NotifySubscription[],
+): Promise<void> {
+  const { kind, labels } = COLUMN_TO_STATUS[card.column];
+  const extra: string[][] = labels.map((l) => ["t", l]);
+  if (card.assignee) extra.push(["assignee", card.assignee]);
+  if (card.rank) extra.push(["rank", card.rank]);
+  extra.push(...notifyTags(subscriptions));
   await relay.submit(signer.signEvent(kind, statusTags(card, lane, extra), ""));
+}
+
+/**
+ * Buzz channel fan-out for matching subscriptions.
+ * A2A front-door / webhook delivery is handled by the host CLI
+ * (`cli/tools/buzz-notify-deliver.mjs`) so browser sessions never touch secrets.
+ */
+export async function emitCardNotifications(
+  relay: Relay, signer: Signer, lane: Lane, card: Card,
+  change: NotifyChange,
+): Promise<string[]> {
+  const recipients = matchingRecipients(card.notifications, change);
+  if (!recipients.length || !lane.channelId) return [];
+  const delivered: string[] = [];
+  for (const slug of recipients) {
+    const content = formatNotifyMessage(change, slug);
+    await relay.submit(signer.signEvent(
+      K.KIND_STREAM_MESSAGE,
+      [["h", lane.channelId], ["t", "buzz-notify"], ["notify-agent", slug], ["e", card.id]],
+      content,
+    ));
+    delivered.push(slug);
+  }
+  return delivered;
 }
 
 export async function assignCard(
@@ -457,8 +519,19 @@ export async function assignCard(
     extra.push(["dispatch", msg.id, lane.channelId]);
   }
   const { kind, labels } = COLUMN_TO_STATUS[card.column];
+  extra.push(...notifyTags(card.notifications));
   const tags = statusTags(card, lane, labels.map((l): string[] => ["t", l]).concat(extra));
-  await relay.submit(signer.signEvent(kind, tags, ""));
+  const status = signer.signEvent(kind, tags, "");
+  await relay.submit(status);
+  if (assignee !== (card.assignee ?? "")) {
+    await emitCardNotifications(relay, signer, lane, card, {
+      type: "assignee",
+      cardId: card.id,
+      subject: card.subject,
+      detail: `- assignee: ${assignee || "(none)"} (${agentName || "—"})`,
+      triggeringEventId: status.id,
+    });
+  }
 }
 
 function syncInstruction(

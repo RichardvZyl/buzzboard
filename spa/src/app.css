@@ -333,6 +333,21 @@ button.sm svg { font-size: 0.8rem; }
 .row label { flex: 1; display: grid; gap: 0.3rem; font-size: 0.78rem; color: var(--muted-foreground); font-weight: 500; }
 .check { display: flex; gap: 0.5rem; align-items: center; font-size: 0.85rem; color: var(--muted-foreground); }
 .check input { width: auto; accent-color: var(--primary); }
+.notify-box {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem 0.9rem 0.9rem;
+  display: grid;
+  gap: 0.6rem;
+}
+.notify-box legend { padding: 0 0.25rem; }
+.notify-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; font-size: 0.85rem; }
+.notify-list li { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+.notify-events {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr));
+  gap: 0.25rem 0.6rem;
+}
 /* keep fieldset in normal flow — display:grid collapses the legend to
    min-content width and it wraps word-by-word */
 fieldset {

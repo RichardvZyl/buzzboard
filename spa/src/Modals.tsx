@@ -2,9 +2,13 @@ import { useEffect, useState } from "react";
 import { COLUMNS, COLUMN_LABELS, type Column } from "./lib/kinds";
 import {
   addBoardLinkToCanvas, assignCard, attachChannel, createCard, createLane, deleteLane,
-  fetchMyChannels, githubSlug, laneBoardUrl, moveCard,
+  fetchMyChannels, githubSlug, laneBoardUrl, moveCard, saveCardNotifications,
   type Agent, type Card, type Lane,
 } from "./lib/board";
+import {
+  NOTIFY_AGENT_SLUGS, NOTIFY_EVENTS, upsertSubscription,
+  type NotifyEvent, type NotifySubscription,
+} from "./lib/notify";
 import type { Session } from "./Board";
 import { BotIcon, GithubIcon, XIcon } from "./Icons";
 
@@ -114,8 +118,27 @@ export function CardModal({ card, lane, session, agents, nameOf, onDemoThread, o
   const [column, setColumn] = useState<Column>(card.column);
   const [assignee, setAssignee] = useState(card.assignee ?? "");
   const [dispatch, setDispatch] = useState(true);
+  const [notifyOpen, setNotifyOpen] = useState(card.notifications.length > 0);
+  const [notifySubs, setNotifySubs] = useState<NotifySubscription[]>(card.notifications);
+  const [notifySlug, setNotifySlug] = useState<string>(NOTIFY_AGENT_SLUGS[0]);
+  const [notifyEvents, setNotifyEvents] = useState<Set<NotifyEvent>>(new Set());
   const { busy, error, run } = useAction(close, refresh);
   const canDispatch = Boolean(lane.channelId);
+
+  const editNotifyAgent = (slug: string) => {
+    setNotifySlug(slug);
+    const existing = notifySubs.find((s) => s.agentSlug === slug);
+    setNotifyEvents(new Set(existing?.events ?? []));
+  };
+
+  const toggleNotifyEvent = (ev: NotifyEvent) => {
+    setNotifyEvents((prev) => {
+      const next = new Set(prev);
+      if (next.has(ev)) next.delete(ev);
+      else next.add(ev);
+      return next;
+    });
+  };
 
   return (
     <Overlay close={close}>
@@ -201,6 +224,75 @@ export function CardModal({ card, lane, session, agents, nameOf, onDemoThread, o
         Post assignment message in the lane channel (wakes the agent)
         {!canDispatch && <span className="error-inline"> — lane has no channel</span>}
       </label>
+
+      <fieldset className="notify-box">
+        <legend>
+          <label className="check">
+            <input type="checkbox" checked={notifyOpen}
+                   onChange={(e) => setNotifyOpen(e.target.checked)} />
+            Notify agents
+          </label>
+        </legend>
+        {notifyOpen && (
+          <>
+            <p className="muted">
+              Subscriptions live on the card. Matching column moves, assignee
+              changes and comments fan out on the lane channel; the host CLI
+              also delivers through the A2A front door (Delegation Bot via :8122).
+            </p>
+            {notifySubs.length > 0 && (
+              <ul className="notify-list">
+                {notifySubs.map((s) => (
+                  <li key={s.agentSlug}>
+                    <strong>{s.agentSlug}</strong>
+                    <span className="muted"> — {s.events.join(", ")}</span>
+                    <button type="button" className="ghost" disabled={busy}
+                            onClick={() => editNotifyAgent(s.agentSlug)}>Edit</button>
+                    <button type="button" className="ghost" disabled={busy}
+                            onClick={() => setNotifySubs(upsertSubscription(notifySubs, s.agentSlug, []))}>
+                      Remove
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="row">
+              <label>
+                Agent
+                <select value={notifySlug} onChange={(e) => editNotifyAgent(e.target.value)}>
+                  {NOTIFY_AGENT_SLUGS.map((slug) => (
+                    <option key={slug} value={slug}>{slug}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <div className="notify-events">
+              {NOTIFY_EVENTS.map((ev) => (
+                <label key={ev} className="check">
+                  <input type="checkbox" checked={notifyEvents.has(ev)}
+                         onChange={() => toggleNotifyEvent(ev)} />
+                  {ev}
+                </label>
+              ))}
+            </div>
+            <div className="actions">
+              <button type="button" className="ghost" disabled={busy || notifyEvents.size === 0}
+                      onClick={() => setNotifySubs(
+                        upsertSubscription(notifySubs, notifySlug, [...notifyEvents]),
+                      )}>
+                Stage agent
+              </button>
+              <button type="button" disabled={busy}
+                      onClick={() => run(() => saveCardNotifications(
+                        session.relay, session.signer, lane, card, notifySubs,
+                      ))}>
+                Save notifications
+              </button>
+            </div>
+          </>
+        )}
+      </fieldset>
+
       {error && <div className="error">{error}</div>}
     </Overlay>
   );
