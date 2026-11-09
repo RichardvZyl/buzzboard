@@ -326,8 +326,11 @@ export async function fetchBoard(relay: Relay, myPubkey: string): Promise<BoardD
       ]);
       card.labels = mergeLabels(card.labels, overlayUniq, issue.id, labelActors);
       const placedSlug = resolvePlacementSlug(overlayUniq, issue.id, lanes, nativeAddress);
+      const nativeRepo = owning?.repoId.toLowerCase();
       const target = placedSlug
-        ? (laneAddressBySlug(lanes, placedSlug) ?? nativeAddress)
+        ? (nativeRepo && placedSlug === nativeRepo
+          ? nativeAddress
+          : (laneAddressBySlug(lanes, placedSlug, nativeAddress) ?? nativeAddress))
         : nativeAddress;
       if (cards.has(target)) cards.get(target)!.push(card);
       else cards.get(nativeAddress)!.push(card);

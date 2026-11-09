@@ -62,6 +62,23 @@ export function mergeLabels(
   return [...state.entries()].filter(([, on]) => on).map(([n]) => n);
 }
 
+/** Resolve placement target lane; optional `a` tag must match slug when present. */
+export function placementTargetLaneAddress(
+  ev: SignedEvent,
+  lanes: Lane[],
+  targetSlug: string,
+  nativeAddress: string,
+): string | null {
+  const slug = targetSlug.toLowerCase();
+  const explicit = tagValue(ev, "a");
+  if (explicit) {
+    const lane = lanes.find((l) => l.address === explicit);
+    if (!lane || lane.repoId.toLowerCase() !== slug) return null;
+    return explicit;
+  }
+  return laneAddressBySlug(lanes, slug, nativeAddress);
+}
+
 /** Latest authorized placement slug for an issue, or null. */
 export function resolvePlacementSlug(
   events: SignedEvent[],
@@ -78,12 +95,14 @@ export function resolvePlacementSlug(
       const pubkey = ev.pubkey.toLowerCase();
 
       const targetSlug = String(tagValue(ev, "l") || "").toLowerCase();
-      const targetLaneAddress = laneAddressBySlug(lanes, targetSlug);
 
-      // Native slug un-place
+      // Native slug un-place — only privileges on the card's home lane
       if (nativeLane && targetSlug === nativeLane.repoId.toLowerCase()) {
         return nativePrivileged.has(pubkey);
       }
+
+      const targetLaneAddress = placementTargetLaneAddress(ev, lanes, targetSlug, nativeAddress);
+      if (!targetLaneAddress) return false;
 
       const targetLane = lanes.find((l) => l.address === targetLaneAddress);
       const targetPrivileged = targetLane ? privilegedPubkeys([targetLane]) : new Set<string>();
@@ -105,9 +124,29 @@ export function privilegedPubkeys(lanes: Lane[]): Set<string> {
   return s;
 }
 
-export function laneAddressBySlug(lanes: Lane[], slug: string): string | null {
-  const hit = lanes.find((l) => l.repoId.toLowerCase() === slug.toLowerCase());
-  return hit?.address ?? null;
+/**
+ * Map a lane repoId slug to an address. When several lanes share a repoId,
+ * only resolve when nativeAddress disambiguates (same owner or exact native lane).
+ */
+export function laneAddressBySlug(
+  lanes: Lane[],
+  slug: string,
+  nativeAddress?: string,
+): string | null {
+  const lower = slug.toLowerCase();
+  const matches = lanes.filter((l) => l.repoId.toLowerCase() === lower);
+  if (matches.length === 0) return null;
+  if (matches.length === 1) return matches[0].address;
+  if (!nativeAddress) return null;
+
+  const nativeOwner = nativeAddress.split(":")[1]?.toLowerCase();
+  const sameOwner = matches.filter((l) => l.owner === nativeOwner);
+  if (sameOwner.length === 1) return sameOwner[0].address;
+
+  const nativeHit = matches.find((l) => l.address === nativeAddress);
+  if (nativeHit) return nativeHit.address;
+
+  return null;
 }
 
 export { tagValues };
