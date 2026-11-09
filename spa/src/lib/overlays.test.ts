@@ -62,8 +62,17 @@ describe("overlays", () => {
     expect(mergeLabels(["triage"], [add, place], ISSUE, actors).sort()).toEqual(["blocked", "triage"]);
   });
 
-  it("ignores placement from outsiders", () => {
-    const privileged = new Set([OWNER]);
+  it("ignores placement from outsiders and allows owners of both lanes", () => {
+    const nativeLane = { address: "30617:b:a", owner: OWNER, maintainers: [], repoId: "a", tags: [] } as Lane;
+    const targetLane = {
+      address: "30617:b:needs-richard",
+      owner: OWNER,
+      maintainers: [],
+      repoId: "needs-richard",
+      tags: [],
+    } as Lane;
+    const lanes = [nativeLane, targetLane];
+
     const bad = ev({
       pubkey: OUTSIDER,
       created_at: 1,
@@ -77,6 +86,20 @@ describe("overlays", () => {
       tags: [["L", PLACEMENT_NAMESPACE], ["l", "needs-richard", PLACEMENT_NAMESPACE], ["e", ISSUE]],
       content: "move",
     });
-    expect(resolvePlacementSlug([bad, good], ISSUE, privileged)).toBe("needs-richard");
+    expect(resolvePlacementSlug([bad, good], ISSUE, lanes, nativeLane.address)).toBe("needs-richard");
+  });
+
+  it("maintainer of lane A cannot place into lane B", () => {
+    const laneA = { address: "30617:x:a", owner: "x", maintainers: [OWNER], repoId: "a", tags: [] } as Lane;
+    const laneB = { address: "30617:y:b", owner: "y", maintainers: [], repoId: "b", tags: [] } as Lane;
+    const lanes = [laneA, laneB];
+
+    const bad = ev({
+      pubkey: OWNER,
+      created_at: 1,
+      tags: [["L", PLACEMENT_NAMESPACE], ["l", "b", PLACEMENT_NAMESPACE], ["e", ISSUE]],
+      content: "move",
+    });
+    expect(resolvePlacementSlug([bad], ISSUE, lanes, laneA.address)).toBeNull();
   });
 });

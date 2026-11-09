@@ -33,7 +33,6 @@ import {
   isArchiveLane,
   laneAddressBySlug,
   mergeLabels,
-  privilegedPubkeys,
   resolvePlacementSlug,
 } from "./overlays.ts";
 
@@ -311,7 +310,6 @@ export async function fetchBoard(relay: Relay, myPubkey: string): Promise<BoardD
       ])
       : [];
     const overlayUniq = [...new Map(overlays.map((ev) => [ev.id, ev])).values()];
-    const privileged = privilegedPubkeys(lanes);
 
     const laneByAddress = new Map(lanes.map((l) => [l.address, l]));
     for (const issue of issues) {
@@ -327,7 +325,7 @@ export async function fetchBoard(relay: Relay, myPubkey: string): Promise<BoardD
         ...(card.assignee ? [card.assignee.toLowerCase()] : []),
       ]);
       card.labels = mergeLabels(card.labels, overlayUniq, issue.id, labelActors);
-      const placedSlug = resolvePlacementSlug(overlayUniq, issue.id, privileged);
+      const placedSlug = resolvePlacementSlug(overlayUniq, issue.id, lanes, nativeAddress);
       const target = placedSlug
         ? (laneAddressBySlug(lanes, placedSlug) ?? nativeAddress)
         : nativeAddress;

@@ -66,10 +66,30 @@ export function mergeLabels(
 export function resolvePlacementSlug(
   events: SignedEvent[],
   issueId: string,
-  privileged: Set<string>,
+  lanes: Lane[],
+  nativeAddress: string,
 ): string | null {
+  const nativeLane = lanes.find((l) => l.address === nativeAddress);
+  const nativePrivileged = nativeLane ? privilegedPubkeys([nativeLane]) : new Set<string>();
+
   const ordered = events
-    .filter((ev) => isPlacementEvent(ev) && privileged.has(ev.pubkey.toLowerCase()))
+    .filter((ev) => {
+      if (!isPlacementEvent(ev)) return false;
+      const pubkey = ev.pubkey.toLowerCase();
+
+      const targetSlug = String(tagValue(ev, "l") || "").toLowerCase();
+      const targetLaneAddress = laneAddressBySlug(lanes, targetSlug);
+
+      // Native slug un-place
+      if (nativeLane && targetSlug === nativeLane.repoId.toLowerCase()) {
+        return nativePrivileged.has(pubkey);
+      }
+
+      const targetLane = lanes.find((l) => l.address === targetLaneAddress);
+      const targetPrivileged = targetLane ? privilegedPubkeys([targetLane]) : new Set<string>();
+
+      return nativePrivileged.has(pubkey) && targetPrivileged.has(pubkey);
+    })
     .filter((ev) => ev.tags.some((t) => t[0] === "e" && t[1] === issueId))
     .sort((a, b) => a.created_at - b.created_at || (a.id < b.id ? -1 : 1));
   const last = ordered[ordered.length - 1];
