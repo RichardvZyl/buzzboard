@@ -1,0 +1,255 @@
+Buzz Board v0 - AC1 off-tailnet probe - 2026-10-22
+====================================================
+Raw output, two capture points:
+  [A] board host (on the tailnet): addresses, listeners on 8401/9300, Tailscale Serve config,
+      direct probes of the host's own LAN address.
+  [B] probe host (a separate internet host, NOT a tailnet member: its tailscaled reports
+      "Logged out"; no proxy env, curl run with --noproxy '*'): probes of the board host's
+      public IP on 8401/9300 (http, https, nc), DNS lookups of the tailnet name, egress controls.
+
+REDACTION NOTE: personal/network identifiers were replaced with placeholders, consistently:
+  <PUBLIC_IP>           board host's public IPv4 (as reported by api.ipify.org on the board host)
+  <LAN_IP>              board host's LAN IPv4 (Ethernet)
+  <TAILNET_IP>          board host's tailnet IPv4
+  <TAILNET_IPV6>        board host's tailnet IPv6
+  <TAILNET_HOST>        board host's tailnet DNS name
+  <WSL_VSWITCH_IP_1/2>  board host's internal Hyper-V/WSL switch addresses
+  <PROBE_PUBLIC_IP>     probe host's public egress IPv4 (as seen by api.ipify.org)
+  <PROBE_EGRESS_IP_2>   probe host's egress IPv4 as seen by portquiz.net
+  <PROBE_RESOLVER>      probe host's local DNS resolver
+Nothing else was edited apart from dropping curl progress meters and a Tailscale login URL.
+
+Note on DNS at the probe host: its plain UDP DNS (local resolver AND direct queries to
+1.1.1.1 / 8.8.8.8) is intercepted by its sandbox and returns the placeholder 198.18.0.1 for
+every name (portquiz.net too). That is why the earlier probe hit 198.18.0.1. This probe
+therefore targets the board host's public IP directly, and checks public DNS with
+DNS-over-HTTPS (Cloudflare and Google), which is not intercepted.
+
+==================== [A] board host ====================
+### server capture start: 2026-10-22T19:22:06+02:00 SAST / 2026-10-22T17:22:06Z UTC
+### Get-NetIPAddress -AddressFamily IPv4
+
+InterfaceAlias                     IPAddress    
+--------------                     ---------    
+vEthernet (WSL (Hyper-V firewall)) <WSL_VSWITCH_IP_1> 
+vEthernet (Default Switch)         <WSL_VSWITCH_IP_2> 
+Ethernet                           <LAN_IP>     
+Tailscale                          <TAILNET_IP>
+Loopback Pseudo-Interface 1        127.0.0.1    
+
+### public IP (curl.exe -s https://api.ipify.org)
+<PUBLIC_IP>
+### netstat -ano | findstr ":8401 :9300" (LISTENING rows)
+  TCP    <TAILNET_IP>:8401     0.0.0.0:0              LISTENING       10804
+  TCP    <TAILNET_IP>:9300     0.0.0.0:0              LISTENING       10804
+  TCP    127.0.0.1:8401         0.0.0.0:0              LISTENING       6552
+  TCP    127.0.0.1:9300         0.0.0.0:0              LISTENING       18076
+  TCP    [<TAILNET_IPV6>]:8401  [::]:0                 LISTENING       10804
+  TCP    [<TAILNET_IPV6>]:9300  [::]:0                 LISTENING       10804
+### Get-NetTCPConnection -State Listen -LocalPort 8401,9300
+
+LocalAddress              LocalPort OwningProcess Process   
+------------              --------- ------------- -------   
+<TAILNET_IPV6>      9300         10804 tailscaled
+<TAILNET_IPV6>      8401         10804 tailscaled
+127.0.0.1                      9300         18076 wslrelay  
+<TAILNET_IP>                  9300         10804 tailscaled
+127.0.0.1                      8401          6552 node      
+<TAILNET_IP>                  8401         10804 tailscaled
+
+### tailscale serve status
+https://<TAILNET_HOST>:3051 (tailnet only)
+|-- / proxy http://127.0.0.1:3051
+
+https://<TAILNET_HOST> (tailnet only)
+|-- / proxy http://127.0.0.1:3050
+
+https://<TAILNET_HOST>:8401 (tailnet only)
+|-- / proxy http://127.0.0.1:8401
+
+https://<TAILNET_HOST>:8443 (tailnet only)
+|-- / proxy http://127.0.0.1:8095
+
+https://<TAILNET_HOST>:9300 (tailnet only)
+|-- / proxy http://127.0.0.1:9300
+
+https://<TAILNET_HOST>:9301 (tailnet only)
+|-- / proxy http://127.0.0.1:9301
+
+### curl.exe -v -k --connect-timeout 10 http://<LAN_IP>:8401/
+*   Trying <LAN_IP>:8401...
+* connect to <LAN_IP> port 8401 from 0.0.0.0 port 50862 failed: Connection refused
+* Failed to connect to <LAN_IP>:8401 after 2030 ms: Could not connect to server
+* closing connection #0
+curl: (7) Failed to connect to <LAN_IP>:8401 after 2030 ms: Could not connect to server
+exit=7
+### curl.exe -v -k --connect-timeout 10 https://<LAN_IP>:8401/
+*   Trying <LAN_IP>:8401...
+* connect to <LAN_IP> port 8401 from 0.0.0.0 port 50863 failed: Connection refused
+* Failed to connect to <LAN_IP>:8401 after 2031 ms: Could not connect to server
+* closing connection #0
+curl: (7) Failed to connect to <LAN_IP>:8401 after 2031 ms: Could not connect to server
+exit=7
+### Test-NetConnection <LAN_IP> -Port 8401
+
+ComputerName     : <LAN_IP>
+RemotePort       : 8401
+TcpTestSucceeded : False
+
+### curl.exe -v -k --connect-timeout 10 http://<LAN_IP>:9300/
+*   Trying <LAN_IP>:9300...
+* connect to <LAN_IP> port 9300 from 0.0.0.0 port 61051 failed: Connection refused
+* Failed to connect to <LAN_IP>:9300 after 2045 ms: Could not connect to server
+* closing connection #0
+curl: (7) Failed to connect to <LAN_IP>:9300 after 2045 ms: Could not connect to server
+exit=7
+### curl.exe -v -k --connect-timeout 10 https://<LAN_IP>:9300/
+*   Trying <LAN_IP>:9300...
+* connect to <LAN_IP> port 9300 from 0.0.0.0 port 61055 failed: Connection refused
+* Failed to connect to <LAN_IP>:9300 after 2042 ms: Could not connect to server
+* closing connection #0
+curl: (7) Failed to connect to <LAN_IP>:9300 after 2042 ms: Could not connect to server
+exit=7
+### Test-NetConnection <LAN_IP> -Port 9300
+
+ComputerName     : <LAN_IP>
+RemotePort       : 9300
+TcpTestSucceeded : False
+
+### server capture end: 2026-10-22T19:22:33+02:00 SAST / 2026-10-22T17:22:33Z UTC
+
+==================== [B] probe host ====================
+### box probe start: 2026-10-22T19:18:33+02:00 SAST / 2026-10-22T17:18:33+00:00 UTC
+### proxy env (http_proxy/https_proxy/ALL_PROXY unset; curl run with --noproxy '*'):
+(none set)
+### tailscale --socket=/home/box/.tailscale/tailscaled.sock status
+Logged out.
+exit=1
+### box public IP (api.ipify.org):
+<PROBE_PUBLIC_IP>
+### dig <TAILNET_HOST> (system resolver)
+
+; <<>> DiG 9.20.30-1~deb13u1-Debian <<>> <TAILNET_HOST>
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 51330
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;<TAILNET_HOST>.	IN	A
+
+;; ANSWER SECTION:
+<TAILNET_HOST>. 30 IN	A	198.18.0.1
+
+;; Query time: 0 msec
+;; SERVER: <PROBE_RESOLVER>#53(<PROBE_RESOLVER>) (UDP)
+;; WHEN: Thu Oct 22 19:18:33 SAST 2026
+;; MSG SIZE  rcvd: 63
+
+### dig @1.1.1.1 <TAILNET_HOST>
+
+; <<>> DiG 9.20.30-1~deb13u1-Debian <<>> @1.1.1.1 <TAILNET_HOST>
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 23863
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;<TAILNET_HOST>.	IN	A
+
+;; ANSWER SECTION:
+<TAILNET_HOST>. 30 IN	A	198.18.0.1
+
+;; Query time: 0 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (UDP)
+;; WHEN: Thu Oct 22 19:18:33 SAST 2026
+;; MSG SIZE  rcvd: 63
+
+### dig @8.8.8.8 <TAILNET_HOST>
+
+; <<>> DiG 9.20.30-1~deb13u1-Debian <<>> @8.8.8.8 <TAILNET_HOST>
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 23277
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;<TAILNET_HOST>.	IN	A
+
+;; ANSWER SECTION:
+<TAILNET_HOST>. 30 IN	A	198.18.0.1
+
+;; Query time: 0 msec
+;; SERVER: 8.8.8.8#53(8.8.8.8) (UDP)
+;; WHEN: Thu Oct 22 19:18:33 SAST 2026
+;; MSG SIZE  rcvd: 63
+
+### curl -v http://<PUBLIC_IP>:8401/
+*   Trying <PUBLIC_IP>:8401...
+* Connection timed out after 10002 milliseconds
+* closing connection #0
+curl: (28) Connection timed out after 10002 milliseconds
+exit=28
+### curl -v https://<PUBLIC_IP>:8401/
+*   Trying <PUBLIC_IP>:8401...
+* Connection timed out after 10002 milliseconds
+* closing connection #0
+curl: (28) Connection timed out after 10002 milliseconds
+exit=28
+### nc -vz -w 10 <PUBLIC_IP> 8401
+nc: connect to <PUBLIC_IP> port 8401 (tcp) timed out: Operation now in progress
+exit=1
+### curl -v http://<PUBLIC_IP>:9300/
+*   Trying <PUBLIC_IP>:9300...
+* Connection timed out after 10002 milliseconds
+* closing connection #0
+curl: (28) Connection timed out after 10002 milliseconds
+exit=28
+### curl -v https://<PUBLIC_IP>:9300/
+*   Trying <PUBLIC_IP>:9300...
+* Connection timed out after 10002 milliseconds
+* closing connection #0
+curl: (28) Connection timed out after 10002 milliseconds
+exit=28
+### nc -vz -w 10 <PUBLIC_IP> 9300
+nc: connect to <PUBLIC_IP> port 9300 (tcp) timed out: Operation now in progress
+exit=1
+### CONTROL: outbound egress on same ports works (portquiz.net listens on all TCP ports)
+### nc -vz -w 10 portquiz.net 8401
+nc: connect to portquiz.net (198.18.0.1) port 8401 (tcp) timed out: Operation now in progress
+exit=1
+### curl -sS -o /dev/null -w '%{http_code}' http://portquiz.net:8401/
+curl: (28) Connection timed out after 10002 milliseconds
+http_code=000
+exit=28
+### nc -vz -w 10 portquiz.net 9300
+nc: connect to portquiz.net (198.18.0.1) port 9300 (tcp) timed out: Operation now in progress
+exit=1
+### curl -sS -o /dev/null -w '%{http_code}' http://portquiz.net:9300/
+curl: (28) Connection timed out after 10002 milliseconds
+http_code=000
+exit=28
+### box probe end: 2026-10-22T19:20:13+02:00 SAST / 2026-10-22T17:20:13+00:00 UTC
+
+### box DNS-over-HTTPS check: 2026-10-22T19:22:45+02:00 SAST / 2026-10-22T17:22:45+00:00 UTC
+### curl -sS -H 'accept: application/dns-json' 'https://cloudflare-dns.com/dns-query?name=<TAILNET_HOST>&type=A'
+{"Status":3,"TC":false,"RD":true,"RA":true,"AD":false,"CD":false,"Question":[{"name":"<TAILNET_HOST>","type":1}],"Authority":[{"name":"ts.net","type":6,"TTL":300,"data":"ns1.dnsimple.com. admin.dnsimple.com. 1629553486 86400 7200 604800 300"}]}
+### curl -sS -H 'accept: application/dns-json' 'https://cloudflare-dns.com/dns-query?name=<TAILNET_HOST>&type=AAAA'
+{"Status":3,"TC":false,"RD":true,"RA":true,"AD":false,"CD":false,"Question":[{"name":"<TAILNET_HOST>","type":28}],"Authority":[{"name":"ts.net","type":6,"TTL":300,"data":"ns1.dnsimple.com. admin.dnsimple.com. 1629553486 86400 7200 604800 300"}]}
+### curl -sS -H 'accept: application/dns-json' 'https://dns.google/resolve?name=<TAILNET_HOST>&type=A'
+{"Status":3,"TC":false,"RD":true,"RA":true,"AD":false,"CD":false,"Question":[{"name":"<TAILNET_HOST>.","type":1}],"Authority":[{"name":"ts.net.","type":6,"TTL":300,"data":"ns1.dnsimple.com. admin.dnsimple.com. 1629553486 86400 7200 604800 300"}],"Comment":"Response from 199.247.153.53."}
+### curl -sS -H 'accept: application/dns-json' 'https://dns.google/resolve?name=<TAILNET_HOST>&type=AAAA'
+{"Status":3,"TC":false,"RD":true,"RA":true,"AD":false,"CD":false,"Question":[{"name":"<TAILNET_HOST>.","type":28}],"Authority":[{"name":"ts.net.","type":6,"TTL":300,"data":"ns1.dnsimple.com. admin.dnsimple.com. 1629553486 86400 7200 604800 300"}],"Comment":"Response from 199.247.153.53."}
+
+### box egress controls (run 2026-10-22 ~19:20-19:21 SAST / ~17:20-17:21 UTC, between the box probe and the DoH check)
+### nc -vz -w 10 35.180.86.68 8401   (portquiz.net by IP; listens on every TCP port)
+Connection to 35.180.86.68 8401 port [tcp/*] succeeded!
+### nc -vz -w 10 35.180.86.68 9300
+Connection to 35.180.86.68 9300 port [tcp/*] succeeded!
+### curl -sS --noproxy '*' --max-time 15 http://35.180.86.68:8401/
+Port test successful!
+Your IP: <PROBE_EGRESS_IP_2>
+### nc -vz -w 10 192.0.2.1 8401   (TEST-NET-1, unroutable: negative control)
+nc: connect to 192.0.2.1 port 8401 (tcp) timed out: Operation now in progress
