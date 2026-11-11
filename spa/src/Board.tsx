@@ -4,7 +4,9 @@ import {
   addBoardLinkToCanvas, laneBoardUrl, moveCard,
   type Agent, type BoardData, type Card, type Lane,
 } from "./lib/board";
+import { readCollapsedLanes, writeCollapsedLanes } from "./lib/collapsedLanes";
 import { rankBetween } from "./lib/rank";
+
 import {
   AlertIcon, BotIcon, CheckIcon, ChevronRightIcon, ClipboardIcon, GithubIcon, MessageIcon, PlusIcon,
   SearchIcon, TrashIcon, XIcon,
@@ -40,8 +42,8 @@ export function Board({ data, session, refresh, busyRef, optimisticMove }: {
   const [modal, setModalState] = useState<Modal>({ kind: "none" });
   const [dropTarget, setDropTarget] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  // Presentation only: keep stable lane identities across filtering and relay refreshes.
-  const [collapsedLanes, setCollapsedLanes] = useState<Set<string>>(() => new Set());
+  // Presentation only: keep stable lane identities across filtering, refreshes, and reloads.
+  const [collapsedLanes, setCollapsedLanes] = useState<Set<string>>(() => readCollapsedLanes());
   const boardId = useId();
   const [showArchive, setShowArchive] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -62,6 +64,13 @@ export function Board({ data, session, refresh, busyRef, optimisticMove }: {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  function setCollapsed(update: (previous: Set<string>) => Set<string>) {
+    setCollapsedLanes((previous) => {
+      const next = update(previous);
+      writeCollapsedLanes(next);
+      return next;
+    });
+  }
 
   const setModal = (m: Modal) => {
     busyRef.current = m.kind !== "none";
@@ -92,7 +101,7 @@ export function Board({ data, session, refresh, busyRef, optimisticMove }: {
   const hiddenCount = data.lanes.filter((l) => l.hidden).length;
 
   function toggleLane(address: string) {
-    setCollapsedLanes((previous) => {
+    setCollapsed((previous) => {
       const next = new Set(previous);
       if (next.has(address)) next.delete(address);
       else next.add(address);
@@ -101,7 +110,7 @@ export function Board({ data, session, refresh, busyRef, optimisticMove }: {
   }
 
   function newCard(lane: Lane) {
-    setCollapsedLanes((previous) => {
+    setCollapsed((previous) => {
       const next = new Set(previous);
       next.delete(lane.address);
       return next;
