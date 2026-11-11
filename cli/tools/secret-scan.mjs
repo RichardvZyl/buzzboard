@@ -10,6 +10,7 @@ import {execFileSync} from 'node:child_process';
 import {readFileSync, readdirSync, statSync, existsSync} from 'node:fs';
 import {join, extname, dirname} from 'node:path';
 import {pathToFileURL, fileURLToPath} from 'node:url';
+import {resolveTarget} from './cred-target.mjs';
 const cfgPath = process.env.BUZZ_BOARD_CONFIG || join(process.env.LOCALAPPDATA, 'buzz-board', 'config.json');
 const cfg = JSON.parse(readFileSync(cfgPath, 'utf8').replace(/^\uFEFF/, ''));
 const req = createRequire(join(cfg.nostrToolsFrom, 'package.json'));
@@ -22,7 +23,7 @@ const credRead = (target) => execFileSync('powershell.exe', ['-NoProfile', '-Non
   '. $env:BB_WINCRED; $s = [WinCredNative]::Read($env:BB_TARGET); if ($null -eq $s) { exit 3 }; [Console]::Out.Write($s)'],
   {env: {...process.env, BB_WINCRED: cfg.winCredScript, BB_TARGET: target}, stdio: ['ignore', 'pipe', 'ignore'], windowsHide: true}).toString('utf8');
 for (const {bot} of [...roster.boardBots].sort((a, b) => a.bot.localeCompare(b.bot))) {
-  const hex = credRead(`A2A/BUZZ_${bot.toUpperCase().replace(/-/g, '_')}_SECRET_KEY`).trim();
+  const hex = credRead(resolveTarget(bot)).trim();
   if (!/^[0-9a-f]{64}$/.test(hex)) throw new Error(`credential for ${bot} is malformed`);
   const sk = Uint8Array.from(Buffer.from(hex, 'hex'));
   keys.push({bot, pubkeyPrefix: getPublicKey(sk).slice(0, 12)});

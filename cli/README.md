@@ -40,8 +40,7 @@ Memory: the SPA server uses about 20 MB; nothing new was started.
 1. `tools/setup-local.ps1 -RelayUrlFile <file with the relay wss:// tailnet URL> -NostrToolsFrom <buzzboard spa folder>`
    `-WinCredScript <host WinCred.ps1>` creates `<LOCALAPPDATA>/buzz-board/` (ACL: service account + SYSTEM only,
    inheritance removed) with `config.json`.
-2. `node tools/buzz-board.mjs keygen <bot>` creates the Windows Credential Manager generic credential
-   `A2A/BUZZ_<BOT>_SECRET_KEY` (e.g. `A2A/BUZZ_QA_BOT_SECRET_KEY`; refuses to overwrite) and prints the pubkey.
+2. `node tools/buzz-board.mjs keygen <bot>` creates the Windows Credential Manager generic credential derived from the slug (`A2A/BUZZ_<BOT>_SECRET_KEY`, e.g. `A2A/BUZZ_QA_BOT_SECRET_KEY`; refuses to overwrite) and prints the pubkey. Optional target overrides belong in gitignored `roster/credentials.local.json`, not in the tracked roster.
 3. On the relay host: `buzz-admin add-member --pubkey <hex> --role member` (back up `buzz-admin list-members` first).
 4. `node tools/buzz-board.mjs profile --as <bot> --name "<display name>"`.
 

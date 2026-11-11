@@ -41,6 +41,7 @@ import {execFileSync, spawn} from 'node:child_process';
 import {existsSync, readFileSync} from 'node:fs';
 import {dirname, join} from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
+import {resolveTarget} from './cred-target.mjs';
 
 const die = (msg, code = 1) => { process.stderr.write(`buzz-board: ${msg}\n`); process.exit(code); };
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -77,12 +78,11 @@ for (let i = 0; i < rest.length; i++) {
 }
 const list = (v) => (v === undefined ? [] : [].concat(v));
 const out = (o) => process.stdout.write(JSON.stringify(o, null, 2) + '\n');
-const BOT_RE = /^[a-z0-9][a-z0-9-]{1,40}$/;
-
 // ---- keys (never printed) ----
 // Credential Manager access goes through a PowerShell child that dot-sources WinCred.ps1. The target
-// name is passed in the environment; the secret only travels over the child's stdout/stdin pipe.
-function credTarget(bot) { if (!BOT_RE.test(bot || '')) die('bad bot name'); return `A2A/BUZZ_${bot.toUpperCase().replace(/-/g, '_')}_SECRET_KEY`; }
+// name is derived from the slug, or from an optional gitignored roster/credentials.local.json override;
+// the secret only travels over the child's stdout/stdin pipe.
+function credTarget(bot) { try { return resolveTarget(bot); } catch (e) { die(e.message || 'bad bot name'); } }
 function winCred(script, target, input, user = '') {
   if (!cfg.winCredScript || !existsSync(cfg.winCredScript)) die('config.winCredScript not set or missing');
   try {
