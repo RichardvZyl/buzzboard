@@ -12,6 +12,7 @@ import {execFileSync} from 'node:child_process';
 import {existsSync, readFileSync, writeFileSync, mkdirSync} from 'node:fs';
 import {join, dirname} from 'node:path';
 import {pathToFileURL} from 'node:url';
+import {directoryPath, disabledRefuse, loadDirectoryAgents} from './buzz-notify-routing.mjs';
 
 const die = (msg, code = 1) => { process.stderr.write(`buzz-notify-deliver: ${msg}\n`); process.exit(code); };
 const cfgPath = process.env.BUZZ_BOARD_CONFIG || join(process.env.LOCALAPPDATA || '', 'buzz-board', 'config.json');
@@ -121,6 +122,8 @@ function frontDoorBearer() {
 }
 
 async function a2aSend(slug, text) {
+  const refuse = disabledRefuse(slug, loadDirectoryAgents(directoryPath()));
+  if (refuse) die(refuse);
   const url = A2A_DIRECT[slug] || FRONT_DOOR;
   const headers = {'content-type': 'application/json'};
   if (!A2A_DIRECT[slug]) headers.authorization = `Bearer ${frontDoorBearer()}`;
