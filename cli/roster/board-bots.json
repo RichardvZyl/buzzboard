@@ -243,6 +243,16 @@
                           "laneRole":  "bot (lane channel member, added 2026-10-24 by Engineering Lead)"
                       },
                       {
+                          "bot":  "claude",
+                          "type":  "a2a",
+                          "display":  "anthropic/claude (claude-code)",
+                          "pubkey":  "9a1e6caf6c2e3840b3e234460a95e64e8e524ad05d8d9561df303bd40c9652c6",
+                          "npub":  "npub1ng0xetmv9cuypvlzx3rq490xf689yjkstkxe2cwlxqaagryk2trq5uyup5",
+                          "credential":  "A2A/BUZZ_CLAUDE_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (A2A peer; added to the board roster 2026-11-11)"
+                      },
+                      {
                           "bot":  "cline",
                           "type":  "a2a",
                           "display":  "cline/default (cline-cli)",
@@ -251,6 +261,16 @@
                           "credential":  "A2A/BUZZ_CLINE_SECRET_KEY",
                           "relayRole":  "member",
                           "laneRole":  "bot (lane channel member, added 2026-10-24 by Engineering Lead)"
+                      },
+                      {
+                          "bot":  "cline-free",
+                          "type":  "a2a",
+                          "display":  "cline/cline-free (cline-cli)",
+                          "pubkey":  "d5499411e191b517023eab78f50d60e383dec922c74314d3aee34a0746a569a3",
+                          "npub":  "npub164yegy0pjx63wq374du02rtquwpaajfzcap3f5awud9qw349dx3s6nr646",
+                          "credential":  "A2A/BUZZ_CLINE_FREE_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (A2A peer; added to the board roster 2026-11-11)"
                       },
                       {
                           "bot":  "devin",
@@ -311,6 +331,16 @@
                           "credential":  "A2A/BUZZ_AGY_SECRET_KEY",
                           "relayRole":  "member",
                           "laneRole":  "bot (lane channel member, added 2026-10-24 by Engineering Lead)"
+                      },
+                      {
+                          "bot":  "gemini",
+                          "type":  "a2a",
+                          "display":  "google/gemini (gemini-cli)",
+                          "pubkey":  "c9cdc9f46f95543b8f8f3e61ee050d7ba3b4c8ef710d4e88da17fe990af86d1e",
+                          "npub":  "npub1e8xunar0j42rhru08es7upgd0w3mfj80wyx5azx6zllfjzhcd50qqjl8cs",
+                          "credential":  "A2A/BUZZ_GEMINI_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (A2A peer; added to the board roster 2026-11-11)"
                       },
                       {
                           "bot":  "codex",
