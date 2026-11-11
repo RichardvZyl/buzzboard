@@ -28,6 +28,19 @@ function ev(partial: Partial<SignedEvent> & { tags: string[][]; pubkey: string; 
   };
 }
 
+function lane(partial: Partial<Lane> & Pick<Lane, "address" | "owner" | "repoId">): Lane {
+  return {
+    name: partial.repoId,
+    description: "",
+    channelId: null,
+    githubUrl: null,
+    syncAgent: null,
+    maintainers: [],
+    tags: [],
+    ...partial,
+  };
+}
+
 describe("overlays", () => {
   it("detects archive lanes by slug or tags", () => {
     const base = {
@@ -64,14 +77,12 @@ describe("overlays", () => {
   });
 
   it("ignores placement from outsiders and allows owners of both lanes", () => {
-    const nativeLane = { address: "30617:b:a", owner: OWNER, maintainers: [], repoId: "a", tags: [] } as Lane;
-    const targetLane = {
+    const nativeLane = lane({ address: "30617:b:a", owner: OWNER, repoId: "a" });
+    const targetLane = lane({
       address: "30617:b:needs-richard",
       owner: OWNER,
-      maintainers: [],
       repoId: "needs-richard",
-      tags: [],
-    } as Lane;
+    });
     const lanes = [nativeLane, targetLane];
 
     const bad = ev({
@@ -93,27 +104,9 @@ describe("overlays", () => {
   it("disambiguates duplicate repoId slugs via native lane owner", () => {
     const ownerX = "x".repeat(64);
     const ownerY = "y".repeat(64);
-    const laneX = {
-      address: `30617:${ownerX}:shared`,
-      owner: ownerX,
-      maintainers: [],
-      repoId: "shared",
-      tags: [],
-    } as Lane;
-    const laneY = {
-      address: `30617:${ownerY}:shared`,
-      owner: ownerY,
-      maintainers: [],
-      repoId: "shared",
-      tags: [],
-    } as Lane;
-    const nativeLane = {
-      address: `30617:${ownerX}:home`,
-      owner: ownerX,
-      maintainers: [],
-      repoId: "home",
-      tags: [],
-    } as Lane;
+    const laneX = lane({ address: `30617:${ownerX}:shared`, owner: ownerX, repoId: "shared" });
+    const laneY = lane({ address: `30617:${ownerY}:shared`, owner: ownerY, repoId: "shared" });
+    const nativeLane = lane({ address: `30617:${ownerX}:home`, owner: ownerX, repoId: "home" });
     const lanes = [laneX, laneY, nativeLane];
 
     const place = ev({
@@ -131,20 +124,8 @@ describe("overlays", () => {
   it("native un-place does not route to another owners same slug lane", () => {
     const ownerX = "x".repeat(64);
     const ownerY = "y".repeat(64);
-    const nativeLane = {
-      address: `30617:${ownerX}:work`,
-      owner: ownerX,
-      maintainers: [],
-      repoId: "work",
-      tags: [],
-    } as Lane;
-    const otherSameSlug = {
-      address: `30617:${ownerY}:work`,
-      owner: ownerY,
-      maintainers: [],
-      repoId: "work",
-      tags: [],
-    } as Lane;
+    const nativeLane = lane({ address: `30617:${ownerX}:work`, owner: ownerX, repoId: "work" });
+    const otherSameSlug = lane({ address: `30617:${ownerY}:work`, owner: ownerY, repoId: "work" });
     const lanes = [nativeLane, otherSameSlug];
 
     const unplace = ev({
@@ -160,27 +141,14 @@ describe("overlays", () => {
   it("honors explicit a tag when multiple lanes share a repoId", () => {
     const ownerX = "x".repeat(64);
     const ownerY = "y".repeat(64);
-    const laneX = {
-      address: `30617:${ownerX}:dup`,
-      owner: ownerX,
-      maintainers: [],
-      repoId: "dup",
-      tags: [],
-    } as Lane;
-    const laneY = {
+    const laneX = lane({ address: `30617:${ownerX}:dup`, owner: ownerX, repoId: "dup" });
+    const laneY = lane({
       address: `30617:${ownerY}:dup`,
       owner: ownerY,
       maintainers: [ownerX],
       repoId: "dup",
-      tags: [],
-    } as Lane;
-    const nativeLane = {
-      address: `30617:${ownerX}:src`,
-      owner: ownerX,
-      maintainers: [],
-      repoId: "src",
-      tags: [],
-    } as Lane;
+    });
+    const nativeLane = lane({ address: `30617:${ownerX}:src`, owner: ownerX, repoId: "src" });
     const lanes = [laneX, laneY, nativeLane];
 
     const place = ev({
@@ -198,8 +166,8 @@ describe("overlays", () => {
   });
 
   it("maintainer of lane A cannot place into lane B", () => {
-    const laneA = { address: "30617:x:a", owner: "x", maintainers: [OWNER], repoId: "a", tags: [] } as Lane;
-    const laneB = { address: "30617:y:b", owner: "y", maintainers: [], repoId: "b", tags: [] } as Lane;
+    const laneA = lane({ address: "30617:x:a", owner: "x", maintainers: [OWNER], repoId: "a" });
+    const laneB = lane({ address: "30617:y:b", owner: "y", repoId: "b" });
     const lanes = [laneA, laneB];
 
     const bad = ev({
