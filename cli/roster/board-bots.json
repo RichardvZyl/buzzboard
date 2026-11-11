@@ -83,14 +83,14 @@
                           "laneRole":  "bot (lane channel member, added 2026-10-24 by Engineering Lead)"
                       },
                       {
-                          "bot":  "wife-bot",
+                          "bot":  "angelique-bot",
                           "type":  "grok-bot",
-                          "display":  "Grok-Bot-<wife-name>-Bot",
+                          "display":  "Grok-Bot-Angelique-Bot",
                           "pubkey":  "de603f200806956ad825da521c6beb97ff7ec6ef5d6549174e2f32de2365a07f",
                           "npub":  "npub1mesr7gqgq62k4kp9mffpc6ltjllha3h0t4j5j96w9uedugm95plsy0d4qd",
-                          "credential":  "A2A/BUZZ_WIFE_BOT_SECRET_KEY",
+                          "credential":  "A2A/BUZZ_ANGELIQUE_BOT_SECRET_KEY",
                           "relayRole":  "member",
-                          "laneRole":  "bot (lane channel member, added 2026-10-24 by Engineering Lead)"
+                          "laneRole":  "bot (lane channel member, added 2026-10-24 by Engineering Lead; roster slug corrected from wife-bot 2026-11-11)"
                       },
                       {
                           "bot":  "mcp-maintainer",
@@ -439,6 +439,16 @@
                           "credential":  "A2A/BUZZ_SWITCHBOARD_SECRET_KEY",
                           "relayRole":  "member",
                           "laneRole":  "bot (lane channel member, added 2026-10-24 by Engineering Lead)"
+                      },
+                      {
+                          "bot":  "a2a-maintainer",
+                          "type":  "grok-bot",
+                          "display":  "Grok-Bot-A2A-Maintainer",
+                          "pubkey":  "f1b6a91e819059796f363726251a1b1d8626407b0e4d75da2ff4f9a30d324ea7",
+                          "npub":  "npub17xm2j85pjpvhjmekxunz2xsmrkrzvsrmpexhtk307nu6xrfjf6ns0uaqsj",
+                          "credential":  "A2A/BUZZ_A2A_MAINTAINER_SECRET_KEY",
+                          "relayRole":  "member",
+                          "laneRole":  "bot (lane channel member and lane maintainer, added 2026-11-11; can resolve cards)"
                       }
                   ],
     "existingPeerIdentities":  "Unchanged. The 14 A2A peer identities and the recorder/silo/BotFather identities already on the relay (see the roster doc outside this repo) can be card assignees on the board as they are; they do not post to the board yet (OPEN: peer wiring).",
