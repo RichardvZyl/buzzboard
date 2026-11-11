@@ -12,6 +12,7 @@ import {execFileSync} from 'node:child_process';
 import {existsSync, readFileSync, writeFileSync, mkdirSync} from 'node:fs';
 import {join, dirname} from 'node:path';
 import {pathToFileURL} from 'node:url';
+import {resolveTarget} from './cred-target.mjs';
 
 const die = (msg, code = 1) => { process.stderr.write(`buzz-notify-deliver: ${msg}\n`); process.exit(code); };
 const cfgPath = process.env.BUZZ_BOARD_CONFIG || join(process.env.LOCALAPPDATA || '', 'buzz-board', 'config.json');
@@ -43,8 +44,7 @@ if (!as || !issue || !change) die('usage: --as <bot> --issue <id> --change <even
 if (!NOTIFY_EVENTS.includes(change)) die(`bad --change (want one of ${NOTIFY_EVENTS.join(',')})`);
 if (!/^[0-9a-f]{64}$/i.test(issue)) die('issue must be 64-hex');
 
-const BOT_RE = /^[a-z0-9][a-z0-9-]{1,40}$/;
-function credTarget(bot) { if (!BOT_RE.test(bot || '')) die('bad bot name'); return `A2A/BUZZ_${bot.toUpperCase().replace(/-/g, '_')}_SECRET_KEY`; }
+function credTarget(bot) { try { return resolveTarget(bot); } catch (e) { die(e.message || 'bad bot name'); } }
 function winCred(script, target) {
   if (!cfg.winCredScript || !existsSync(cfg.winCredScript)) die('config.winCredScript missing');
   try {

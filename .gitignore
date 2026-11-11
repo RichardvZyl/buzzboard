@@ -2,3 +2,4 @@
 data/board.db
 __pycache__/
 *.pyc
+cli/roster/credentials.local.json

@@ -41,7 +41,7 @@ Written 2026-10-24 by Projects Manager (Grok Bot). Run everything in PowerShell 
    The channel has one other owner, 5eb45cfc... (the unidentified admin in Cleanup #7). If that turns out to be your own Buzz client, you can add the npub there with the bot role instead.
 
 6. **Write it down:**
-   - Add an entry to `roster\board-bots.json`: bot, type, display, pubkey, npub, credential, relayRole, laneRole. Back the file up first, and don't commit it.
+   - Add an entry to `roster\board-bots.json`: bot, type, display, pubkey, npub, relayRole, laneRole. Back the file up first. The CLI derives the Credential Manager target from the slug; do not put target names in the tracked roster. If a slug must use a different target (an override), put only the target name in gitignored `roster/credentials.local.json` (see `credentials.local.json.example`).
    - Optionally add a line to `E:\Grok-Bot-Workspace\a2a\agent-roster.md`.
 
 7. **Check it works:**
