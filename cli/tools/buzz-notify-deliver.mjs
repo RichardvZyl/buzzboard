@@ -12,7 +12,7 @@ import {execFileSync} from 'node:child_process';
 import {existsSync, readFileSync, writeFileSync, mkdirSync} from 'node:fs';
 import {join, dirname} from 'node:path';
 import {pathToFileURL} from 'node:url';
-import {resolveTarget} from './cred-target.mjs';
+import {BOT_RE, resolveTarget} from './cred-target.mjs';
 
 const die = (msg, code = 1) => { process.stderr.write(`buzz-notify-deliver: ${msg}\n`); process.exit(code); };
 const cfgPath = process.env.BUZZ_BOARD_CONFIG || join(process.env.LOCALAPPDATA || '', 'buzz-board', 'config.json');
