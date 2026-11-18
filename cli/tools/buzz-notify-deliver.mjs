@@ -147,7 +147,7 @@ function saveDedupe(set) {
 function frontDoorBearer() {
   const t = 'A2A/FRONTDOOR_BEARER_TOKEN';
   const got = winCred('$s = [WinCredNative]::Read($env:BB_TARGET); if ($null -eq $s) { exit 3 }; [Console]::Out.Write($s)', t);
-  if (got === null) die('front-door bearer missing (A2A/FRONTDOOR_BEARER_TOKEN)');
+  if (got === null) throw new Error('front-door bearer missing (A2A/FRONTDOOR_BEARER_TOKEN)');
   return got.trim();
 }
 
@@ -168,9 +168,11 @@ async function a2aSend(slug, text) {
       },
     },
   };
-  const res = await fetch(url, {method: 'POST', headers, body: JSON.stringify(body)});
+  // A peer that is down or slow must cost only its own notification, so errors are thrown to the
+  // delivery loop (which records them and carries on) and the request has a deadline.
+  const res = await fetch(url, {method: 'POST', headers, body: JSON.stringify(body), signal: AbortSignal.timeout(15000)});
   const raw = await res.text();
-  if (!res.ok) die(`a2a ${slug} HTTP ${res.status}: ${raw.slice(0, 240)}`);
+  if (!res.ok) throw new Error(`a2a ${slug} HTTP ${res.status}: ${raw.slice(0, 240)}`);
   return {url, status: res.status, body: raw.slice(0, 400)};
 }
 
@@ -192,6 +194,7 @@ for (const slug of recipients) {
 }
 
 const results = [];
+const failed = [];
 for (const p of planned) {
   const text =
     `@${p.slug} Buzz card notification: **${subject}**\n` +
@@ -202,10 +205,17 @@ for (const p of planned) {
     results.push({agent: p.slug, dryRun: true, dedupeKey: p.key});
     continue;
   }
-  const a2a = await a2aSend(p.slug, text);
+  let a2a;
+  try { a2a = await a2aSend(p.slug, text); } catch (e) {
+    // Not recorded in the dedupe store, so a replay of this event retries only this recipient.
+    const error = String(e && e.message || e).slice(0, 240);
+    process.stderr.write(`buzz-notify-deliver: ${p.slug} failed: ${error}\n`);
+    failed.push({agent: p.slug, error});
+    continue;
+  }
   already.add(p.key);
-  // Record each delivery as it happens: a later recipient's failure exits the process (die),
-  // and recipients already notified must not be notified again when the event is replayed.
+  // Record each delivery as it happens, so a crash or kill part-way through the list does not
+  // make recipients already notified get notified again when the event is replayed.
   saveDedupe(new Set([p.key]));
   results.push({agent: p.slug, a2a: {url: a2a.url, status: a2a.status}, dedupeKey: p.key});
 }
@@ -215,5 +225,8 @@ process.stdout.write(JSON.stringify({
   change,
   subscriptions: subs,
   delivered: results,
+  failed,
   skippedDeduped: recipients.length - planned.length,
 }, null, 2) + '\n');
+// Non-zero when any recipient failed, after every other recipient has been tried.
+if (failed.length) process.exitCode = 1;
