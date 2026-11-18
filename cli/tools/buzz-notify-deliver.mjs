@@ -9,7 +9,7 @@
 import {createRequire} from 'node:module';
 import {createHash, randomUUID} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
-import {existsSync, readFileSync, writeFileSync, mkdirSync} from 'node:fs';
+import {existsSync, readFileSync, writeFileSync, mkdirSync, renameSync, openSync, closeSync, statSync, rmSync} from 'node:fs';
 import {join, dirname} from 'node:path';
 import {pathToFileURL} from 'node:url';
 
@@ -107,12 +107,43 @@ function loadDedupe() {
     return new Set(Array.isArray(j.keys) ? j.keys : []);
   } catch { return new Set(); }
 }
+// Detached deliveries run concurrently (enqueueNotify spawns one per board change). Each save
+// takes an exclusive lock file, re-reads the store, merges, and replaces the file by rename, so
+// no delivery's keys are lost to another's write and no reader sees a torn file (a torn file
+// loads as empty and would re-send every recent notify).
+const sleepMs = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+function withDedupeLock(fn) {
+  const lock = `${dedupePath}.lock`;
+  const deadline = Date.now() + 10000;
+  for (;;) {
+    try { closeSync(openSync(lock, 'wx')); break; } catch (e) {
+      // EPERM: on Windows the previous holder's lock file is still being deleted.
+      if (!['EEXIST', 'EPERM', 'EBUSY'].includes(e.code)) throw e;
+      // A lock older than 30 s belongs to a process that died while holding it.
+      try { if (Date.now() - statSync(lock).mtimeMs > 30000) { rmSync(lock, {force: true}); continue; } } catch { /* raced with its removal */ }
+      if (Date.now() > deadline) throw new Error(`dedupe store lock busy (${lock})`);
+      sleepMs(20);
+    }
+  }
+  try { return fn(); } finally { rmSync(lock, {force: true}); }
+}
 function saveDedupe(set) {
   mkdirSync(dirname(dedupePath), {recursive: true});
-  const keys = [...set].slice(-5000);
-  writeFileSync(dedupePath, JSON.stringify({keys, updatedAt: new Date().toISOString()}, null, 2));
+  withDedupeLock(() => {
+    const merged = loadDedupe();
+    for (const k of set) merged.add(k);
+    const keys = [...merged].slice(-5000);
+    const tmp = `${dedupePath}.${process.pid}.${randomUUID()}.tmp`;
+    writeFileSync(tmp, JSON.stringify({keys, updatedAt: new Date().toISOString()}, null, 2));
+    for (let attempt = 0; ; attempt++) {
+      try { renameSync(tmp, dedupePath); return; } catch (e) {
+        // Windows refuses the replace while a reader has the file open; retry briefly.
+        if (attempt >= 40 || !['EPERM', 'EBUSY', 'EACCES'].includes(e.code)) { rmSync(tmp, {force: true}); throw e; }
+        sleepMs(25);
+      }
+    }
+  });
 }
-
 function frontDoorBearer() {
   const t = 'A2A/FRONTDOOR_BEARER_TOKEN';
   const got = winCred('$s = [WinCredNative]::Read($env:BB_TARGET); if ($null -eq $s) { exit 3 }; [Console]::Out.Write($s)', t);
@@ -173,9 +204,11 @@ for (const p of planned) {
   }
   const a2a = await a2aSend(p.slug, text);
   already.add(p.key);
+  // Record each delivery as it happens: a later recipient's failure exits the process (die),
+  // and recipients already notified must not be notified again when the event is replayed.
+  saveDedupe(new Set([p.key]));
   results.push({agent: p.slug, a2a: {url: a2a.url, status: a2a.status}, dedupeKey: p.key});
 }
-if (!args['dry-run'] && results.length) saveDedupe(already);
 
 process.stdout.write(JSON.stringify({
   issue,
