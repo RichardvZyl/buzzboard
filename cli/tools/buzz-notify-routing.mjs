@@ -11,12 +11,22 @@ export function directoryPath(env = process.env) {
   return (env.A2A_DIRECTORY ?? '').trim() || DEFAULT_DIRECTORY;
 }
 
+function noteDirectoryUnreadable(dirPath, reason) {
+  const why = String(reason || 'unreadable').replace(/\s+/g, ' ').slice(0, 300);
+  process.stderr.write(`buzz-notify-deliver: directory file could not be read (${dirPath}): ${why}\n`);
+}
+
+/** Missing or invalid directory fails open (returns []). One stderr line when the file could not be read. */
 export function loadDirectoryAgents(dirPath, {readFileSync: read = readFileSync, existsSync: exists = existsSync} = {}) {
   try {
-    if (!exists(dirPath)) return [];
+    if (!exists(dirPath)) {
+      noteDirectoryUnreadable(dirPath, 'not found');
+      return [];
+    }
     const d = JSON.parse(read(dirPath, 'utf8').replace(/^\uFEFF/, ''));
     return Array.isArray(d.agents) ? d.agents : [];
-  } catch {
+  } catch (e) {
+    noteDirectoryUnreadable(dirPath, e instanceof Error ? e.message : 'invalid');
     return [];
   }
 }
