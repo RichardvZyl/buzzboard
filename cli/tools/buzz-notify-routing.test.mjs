@@ -46,5 +46,32 @@ test('disabledRefuse blocks disabled peers, including an alias, and allows expli
 });
 
 test('loadDirectoryAgents fails open on a missing or invalid file', () => {
-  assert.deepEqual(loadDirectoryAgents(join(tmpdir(), `missing-${Date.now()}.json`)), []);
+  const lines = [];
+  const orig = process.stderr.write;
+  process.stderr.write = (chunk, encoding, cb) => {
+    lines.push(String(chunk).replace(/\r?\n$/, ''));
+    const done = typeof encoding === 'function' ? encoding : cb;
+    if (typeof done === 'function') done();
+    return true;
+  };
+  const dir = mkdtempSync(join(tmpdir(), 'buzz-notify-routing-bad-'));
+  try {
+    const missing = join(dir, 'missing.json');
+    assert.deepEqual(loadDirectoryAgents(missing), []);
+    const bad = join(dir, 'bad.json');
+    writeFileSync(bad, '{not json', 'utf8');
+    assert.deepEqual(loadDirectoryAgents(bad), []);
+    assert.equal(lines.length, 2);
+    for (const line of lines) assert.match(line, /^buzz-notify-deliver: directory file could not be read \(/);
+    assert.match(lines[0], /missing\.json/);
+    assert.match(lines[1], /bad\.json/);
+    const before = lines.length;
+    const good = join(dir, 'good.json');
+    writeFileSync(good, JSON.stringify({agents: [{id: 'alpha'}]}), 'utf8');
+    assert.deepEqual(loadDirectoryAgents(good), [{id: 'alpha'}]);
+    assert.equal(lines.length, before, 'a readable directory does not warn');
+  } finally {
+    process.stderr.write = orig;
+    rmSync(dir, {recursive: true, force: true});
+  }
 });
