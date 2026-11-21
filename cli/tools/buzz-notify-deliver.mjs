@@ -9,9 +9,10 @@
 import {createRequire} from 'node:module';
 import {createHash, randomUUID} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
-import {existsSync, readFileSync, writeFileSync, mkdirSync, renameSync, openSync, closeSync, statSync, rmSync} from 'node:fs';
+import {existsSync, readFileSync, writeFileSync, mkdirSync, renameSync, rmSync} from 'node:fs';
 import {join, dirname} from 'node:path';
 import {pathToFileURL} from 'node:url';
+import {withFileLock} from './buzz-notify-dedupe-lock.mjs';
 
 const die = (msg, code = 1) => { process.stderr.write(`buzz-notify-deliver: ${msg}\n`); process.exit(code); };
 const cfgPath = process.env.BUZZ_BOARD_CONFIG || join(process.env.LOCALAPPDATA || '', 'buzz-board', 'config.json');
@@ -113,19 +114,7 @@ function loadDedupe() {
 // loads as empty and would re-send every recent notify).
 const sleepMs = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 function withDedupeLock(fn) {
-  const lock = `${dedupePath}.lock`;
-  const deadline = Date.now() + 10000;
-  for (;;) {
-    try { closeSync(openSync(lock, 'wx')); break; } catch (e) {
-      // EPERM: on Windows the previous holder's lock file is still being deleted.
-      if (!['EEXIST', 'EPERM', 'EBUSY'].includes(e.code)) throw e;
-      // A lock older than 30 s belongs to a process that died while holding it.
-      try { if (Date.now() - statSync(lock).mtimeMs > 30000) { rmSync(lock, {force: true}); continue; } } catch { /* raced with its removal */ }
-      if (Date.now() > deadline) throw new Error(`dedupe store lock busy (${lock})`);
-      sleepMs(20);
-    }
-  }
-  try { return fn(); } finally { rmSync(lock, {force: true}); }
+  return withFileLock(`${dedupePath}.lock`, fn);
 }
 function saveDedupe(set) {
   mkdirSync(dirname(dedupePath), {recursive: true});
