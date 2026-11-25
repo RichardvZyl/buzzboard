@@ -146,16 +146,23 @@ test("card details, drag/drop, and new-lane dialog still work after expanding", 
   assert.equal(await page.locator(".lane").count(), 3);
 });
 
-test("background polling preserves collapse and a fresh page starts expanded", async (t) => {
+test("background polling and reload preserve collapse via localStorage", async (t) => {
   const page = await demo(t);
   const lane = page.locator(".lane").first();
   await lane.locator(".lane-toggle").click();
   // Advance the app's real polling timer rather than sleeping for five seconds.
   await page.clock.runFor(5500);
   assert.equal(await lane.locator(".columns").isVisible(), false);
+  const stored = await page.evaluate(() => localStorage.getItem("buzzboard.collapsedLanes"));
+  assert.ok(stored && JSON.parse(stored).length >= 1);
   await page.reload();
-  await lane.locator(".columns").waitFor();
-  assert.equal(await lane.locator(".lane-toggle").getAttribute("aria-expanded"), "true");
+  await page.locator(".lane .lane-toggle").first().waitFor();
+  const restored = page.locator(".lane").first();
+  assert.equal(await restored.locator(".columns").isVisible(), false);
+  assert.equal(await restored.locator(".lane-toggle").getAttribute("aria-expanded"), "false");
+  assert.equal(await restored.getAttribute("data-collapsed"), "true");
+  // Neighbor boards stay visible so collapse shrinks space rather than blanking the page.
+  assert.equal(await page.locator(".lane").nth(1).locator(".columns").isVisible(), true);
 });
 
 test("exit demo returns to the connection page", async (t) => {
