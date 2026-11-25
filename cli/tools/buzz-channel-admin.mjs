@@ -4,7 +4,7 @@
 // usage: node buzz-channel-admin.mjs --as <bot> --op add|remove|create --channel <uuid> [--pubkeys <hex,...>] [--role bot|admin] [--name n --about t --visibility private]
 import {createRequire} from 'node:module'; import {createHash, randomUUID} from 'node:crypto';
 import {execFileSync} from 'node:child_process'; import {existsSync, readFileSync} from 'node:fs';
-import {join} from 'node:path'; import {pathToFileURL} from 'node:url';
+import {join} from 'node:path'; import {pathToFileURL} from 'node:url'; import {resolveTarget} from './cred-target.mjs';
 const die=(m)=>{process.stderr.write(`buzz-channel-add: ${m}\n`);process.exit(1);};
 const cfg=JSON.parse(readFileSync(join(process.env.LOCALAPPDATA,'buzz-board','config.json'),'utf8').replace(/^\uFEFF/,''));
 const req=createRequire(join(cfg.nostrToolsFrom,'package.json'));
@@ -12,7 +12,7 @@ const pm=await import(pathToFileURL(req.resolve('nostr-tools/pure')).href); cons
 const a={}; const v=process.argv.slice(2); for(let i=0;i<v.length;i+=2)a[v[i].slice(2)]=v[i+1];
 if(!/^[a-z0-9-]+$/.test(a.as||''))die('bad --as'); if(!/^[0-9a-f-]{36}$/.test(a.channel||''))die('bad --channel');
 const op=a.op||'add'; if(!['add','remove','create'].includes(op))die('bad --op'); const role=a.role||'bot'; if(!['bot','admin','member'].includes(role))die('bad --role'); const pks=(a.pubkeys||'').split(',').filter(Boolean); if(!pks.every(p=>/^[0-9a-f]{64}$/.test(p)))die('bad pubkeys');
-const target=`A2A/BUZZ_${a.as.toUpperCase().replace(/-/g,'_')}_SECRET_KEY`;
+let target; try { target = resolveTarget(a.as); } catch (e) { die(e.message || 'bad --as'); }
 let hex; try{hex=execFileSync('powershell.exe',['-NoProfile','-NonInteractive','-Command','. $env:BB_WINCRED; $s=[WinCredNative]::Read($env:BB_TARGET); if($null -eq $s){exit 3}; [Console]::Out.Write($s)'],{env:{...process.env,BB_WINCRED:cfg.winCredScript,BB_TARGET:target},stdio:['pipe','pipe','ignore'],windowsHide:true}).toString().trim();}catch(e){die(`cannot read ${target} (exit ${e.status})`);}
 if(!/^[0-9a-f]{64}$/.test(hex))die(`${target} malformed`);
 const sk=Uint8Array.from(Buffer.from(hex,'hex')); hex=null;
