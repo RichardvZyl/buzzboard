@@ -13,6 +13,7 @@ import {existsSync, readFileSync, writeFileSync, mkdirSync, renameSync, rmSync} 
 import {join, dirname} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {withFileLock} from './buzz-notify-dedupe-lock.mjs';
+import {directoryPath, disabledRefuse, loadDirectoryAgents} from './buzz-notify-routing.mjs';
 
 const die = (msg, code = 1) => { process.stderr.write(`buzz-notify-deliver: ${msg}\n`); process.exit(code); };
 const cfgPath = process.env.BUZZ_BOARD_CONFIG || join(process.env.LOCALAPPDATA || '', 'buzz-board', 'config.json');
@@ -173,10 +174,21 @@ const subs = parseSubs(statuses, issue);
 const recipients = subs.filter((s) => s.events.includes(change)).map((s) => s.agentSlug).sort();
 const triggering = args['triggering-event'] || createHash('sha256').update(`${issue}:${change}:${args.detail || ''}:${Date.now()}`).digest('hex');
 const already = loadDedupe();
+// Routing gate (card 79200ff4): a disabled peer is refused on every path, A2A_DIRECT included.
+// It is skipped and reported, not fatal, so one disabled subscriber does not stop delivery to
+// the healthy subscribers sorted after it. Dry runs apply the same gate.
+const directoryAgents = loadDirectoryAgents(directoryPath());
+const refused = [];
 const planned = [];
 for (const slug of recipients) {
   const key = `${issue}:${slug}:${change}:${triggering}`;
   if (already.has(key)) continue;
+  const reason = disabledRefuse(slug, directoryAgents);
+  if (reason) {
+    process.stderr.write(`buzz-notify-deliver: ${reason}\n`);
+    refused.push({agent: slug, reason});
+    continue;
+  }
   planned.push({slug, key});
 }
 
@@ -204,5 +216,6 @@ process.stdout.write(JSON.stringify({
   change,
   subscriptions: subs,
   delivered: results,
-  skippedDeduped: recipients.length - planned.length,
+  refused,
+  skippedDeduped: recipients.length - planned.length - refused.length,
 }, null, 2) + '\n');
