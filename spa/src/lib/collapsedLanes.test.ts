@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import {
   COLLAPSED_LANES_KEY,
   readCollapsedLanes,
@@ -45,5 +45,34 @@ describe("collapsedLanes storage", () => {
       },
     };
     expect(() => writeCollapsedLanes(new Set(["x"]), storage)).not.toThrow();
+  });
+});
+
+describe("collapsedLanes with unavailable browser storage", () => {
+  const original = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+
+  function defineStorage(descriptor: PropertyDescriptor) {
+    Object.defineProperty(globalThis, "localStorage", { configurable: true, ...descriptor });
+  }
+
+  afterEach(() => {
+    if (original) Object.defineProperty(globalThis, "localStorage", original);
+    else delete (globalThis as { localStorage?: unknown }).localStorage;
+  });
+
+  it("falls back to empty and does not throw when reading localStorage throws", () => {
+    defineStorage({
+      get() {
+        throw new Error("SecurityError: storage blocked");
+      },
+    });
+    expect([...readCollapsedLanes()]).toEqual([]);
+    expect(() => writeCollapsedLanes(new Set(["x"]))).not.toThrow();
+  });
+
+  it("falls back to empty when localStorage is not defined", () => {
+    defineStorage({ get: () => undefined });
+    expect([...readCollapsedLanes()]).toEqual([]);
+    expect(() => writeCollapsedLanes(new Set(["x"]))).not.toThrow();
   });
 });
