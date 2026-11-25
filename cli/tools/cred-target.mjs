@@ -40,5 +40,5 @@ export function loadOverrides(rosterDir) {
 
 export function resolveTarget(bot, rosterDir) {
   const overrides = loadOverrides(rosterDir || defaultRosterDir());
-  return overrides[bot] || derivedTarget(bot);
+  return (Object.hasOwn(overrides, bot) ? overrides[bot] : null) || derivedTarget(bot);
 }

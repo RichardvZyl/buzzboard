@@ -44,3 +44,12 @@ test('loadOverrides rejects secret-like values', () => {
 test('defaultRosterDir points at cli/roster', () => {
   assert.match(defaultRosterDir().replace(/\\/g, '/'), /cli\/roster$/);
 });
+test('resolveTarget ignores inherited object keys such as constructor', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'buzz-cred-'));
+  try {
+    writeFileSync(join(dir, 'credentials.local.json'), JSON.stringify({'example-bot': 'A2A/BUZZ_OTHER_BOT_SECRET_KEY'}));
+    assert.equal(resolveTarget('constructor', dir), 'A2A/BUZZ_CONSTRUCTOR_SECRET_KEY');
+  } finally {
+    rmSync(dir, {recursive: true, force: true});
+  }
+});
