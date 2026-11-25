@@ -1,0 +1,336 @@
+Buzz Board v0 - AC1 follow-up proof for QA - 2026-10-22
+=========================================================
+Raw output, nothing truncated. Every command is wrapped in BEGIN/END lines with
+timestamps in SAST and UTC, followed by its exit code.
+  [A] board host: tailscale funnel status (raw, plus serve status --json),
+      netsh portproxy table, the owner of the 127.0.0.1:9300 listener (wslrelay),
+      the WSL distro list, WSL-side listeners (ss -ltnp), docker ps and the relay
+      container's port binding. Together these show the path
+      tailnet -> Tailscale Serve -> 127.0.0.1:9300 (wslrelay) -> WSL 127.0.0.1:9300 (docker-proxy) -> relay container :3000.
+  [B] probe host (a separate internet host, NOT a tailnet member; its tailscaled
+      reports "Logged out" at the start and end of the run; no proxy env, curl run
+      with --noproxy '*'): full re-capture of the public-IP probes on 8401/9300,
+      egress controls to portquiz.net by IP on 8401/9300 with curl -w timing, the
+      TEST-NET-1 negative control with exit codes, and a DNS-over-HTTPS lookup of
+      the tailnet name.
+
+REDACTION NOTE: identifiers were replaced with placeholders, consistently with
+ac1-offtailnet-probe-2026-10-22.txt:
+  <PUBLIC_IP> board host public IPv4; <LAN_IP> board host LAN IPv4;
+  <TAILNET_IP> / <TAILNET_IPV6> board host tailnet addresses; <TAILNET_HOST> its
+  tailnet DNS name; <PROBE_PUBLIC_IP> probe host egress IPv4 (api.ipify.org);
+  <PROBE_EGRESS_IP_2> probe host egress IPv4 as seen by portquiz.net.
+  The probe host's egress IP can differ between runs (shared egress pool).
+  A Tailscale login URL printed by "tailscale status" was dropped. Nothing else was edited.
+
+==================== [A] board host ====================[2026-10-22T19:31:34+02:00 SAST / 2026-10-22T17:31:34Z UTC] board host capture start
+[2026-10-22T19:31:34+02:00 SAST / 2026-10-22T17:31:34Z UTC] BEGIN: tailscale funnel status
+https://<TAILNET_HOST>:3051 (tailnet only)
+|-- / proxy http://127.0.0.1:3051
+
+https://<TAILNET_HOST> (tailnet only)
+|-- / proxy http://127.0.0.1:3050
+
+https://<TAILNET_HOST>:8401 (tailnet only)
+|-- / proxy http://127.0.0.1:8401
+
+https://<TAILNET_HOST>:8443 (tailnet only)
+|-- / proxy http://127.0.0.1:8095
+
+https://<TAILNET_HOST>:9300 (tailnet only)
+|-- / proxy http://127.0.0.1:9300
+
+https://<TAILNET_HOST>:9301 (tailnet only)
+|-- / proxy http://127.0.0.1:9301
+
+
+exit=0
+[2026-10-22T19:31:34+02:00 SAST / 2026-10-22T17:31:34Z UTC] END
+[2026-10-22T19:31:34+02:00 SAST / 2026-10-22T17:31:34Z UTC] BEGIN: tailscale serve status --json
+{
+  "TCP": {
+    "3051": {
+      "HTTPS": true
+    },
+    "443": {
+      "HTTPS": true
+    },
+    "8401": {
+      "HTTPS": true
+    },
+    "8443": {
+      "HTTPS": true
+    },
+    "9300": {
+      "HTTPS": true
+    },
+    "9301": {
+      "HTTPS": true
+    }
+  },
+  "Web": {
+    "<TAILNET_HOST>:3051": {
+      "Handlers": {
+        "/": {
+          "Proxy": "http://127.0.0.1:3051"
+        }
+      }
+    },
+    "<TAILNET_HOST>:443": {
+      "Handlers": {
+        "/": {
+          "Proxy": "http://127.0.0.1:3050"
+        }
+      }
+    },
+    "<TAILNET_HOST>:8401": {
+      "Handlers": {
+        "/": {
+          "Proxy": "http://127.0.0.1:8401"
+        }
+      }
+    },
+    "<TAILNET_HOST>:8443": {
+      "Handlers": {
+        "/": {
+          "Proxy": "http://127.0.0.1:8095"
+        }
+      }
+    },
+    "<TAILNET_HOST>:9300": {
+      "Handlers": {
+        "/": {
+          "Proxy": "http://127.0.0.1:9300"
+        }
+      }
+    },
+    "<TAILNET_HOST>:9301": {
+      "Handlers": {
+        "/": {
+          "Proxy": "http://127.0.0.1:9301"
+        }
+      }
+    }
+  }
+}
+
+exit=0
+[2026-10-22T19:31:34+02:00 SAST / 2026-10-22T17:31:34Z UTC] END
+[2026-10-22T19:31:34+02:00 SAST / 2026-10-22T17:31:34Z UTC] BEGIN: netsh interface portproxy show all
+
+
+exit=0
+[2026-10-22T19:31:34+02:00 SAST / 2026-10-22T17:31:34Z UTC] END
+[2026-10-22T19:31:34+02:00 SAST / 2026-10-22T17:31:34Z UTC] BEGIN: Get-NetTCPConnection -State Listen -LocalPort 9300 + owning process path/command line
+
+
+LocalAddress : <TAILNET_IPV6>
+LocalPort    : 9300
+PID          : 10804
+Name         : tailscaled.exe
+Path         : 
+CommandLine  : 
+
+LocalAddress : 127.0.0.1
+LocalPort    : 9300
+PID          : 18076
+Name         : wslrelay.exe
+Path         : C:\Program Files\WSL\wslrelay.exe
+CommandLine  :  --mode 1 --vm-id {d921d0e3-b3f9-4c12-bb8c-6fb900f40293} --handle 1724
+
+LocalAddress : <TAILNET_IP>
+LocalPort    : 9300
+PID          : 10804
+Name         : tailscaled.exe
+Path         : 
+CommandLine  : 
+
+
+
+
+[2026-10-22T19:31:36+02:00 SAST / 2026-10-22T17:31:36Z UTC] END
+[2026-10-22T19:31:36+02:00 SAST / 2026-10-22T17:31:36Z UTC] BEGIN: wsl --list --verbose
+  NAME              STATE           VERSION
+* Ubuntu            Running         2
+  docker-desktop    Stopped         2
+
+exit=0
+[2026-10-22T19:31:36+02:00 SAST / 2026-10-22T17:31:36Z UTC] END
+[2026-10-22T19:31:36+02:00 SAST / 2026-10-22T17:31:36Z UTC] BEGIN: wsl -d Ubuntu -e ss -ltnp
+State  Recv-Q Send-Q  Local Address:Port  Peer Address:PortProcess                                   
+LISTEN 0      4096        127.0.0.1:8765       0.0.0.0:*    users:(("docker-proxy",pid=2963,fd=8))   
+LISTEN 0      4096        127.0.0.1:9000       0.0.0.0:*    users:(("docker-proxy",pid=4783,fd=8))   
+LISTEN 0      4096        127.0.0.1:9091       0.0.0.0:*    users:(("docker-proxy",pid=6321,fd=8))   
+LISTEN 0      4096        127.0.0.1:9090       0.0.0.0:*    users:(("docker-proxy",pid=6301,fd=8))   
+LISTEN 0      4096        127.0.0.1:9301       0.0.0.0:*    users:(("docker-proxy",pid=4525,fd=8))   
+LISTEN 0      4096        127.0.0.1:9300       0.0.0.0:*    users:(("docker-proxy",pid=53736,fd=8))  
+LISTEN 0      1000   10.255.255.254:53         0.0.0.0:*                                             
+LISTEN 0      4096        127.0.0.1:3000       0.0.0.0:*    users:(("docker-proxy",pid=54969,fd=8))  
+LISTEN 0      4096        127.0.0.1:3030       0.0.0.0:*    users:(("docker-proxy",pid=2238,fd=8))   
+LISTEN 0      4096        127.0.0.1:27017      0.0.0.0:*    users:(("docker-proxy",pid=3633,fd=8))   
+LISTEN 0      4096        127.0.0.1:3081       0.0.0.0:*    users:(("docker-proxy",pid=6120,fd=8))   
+LISTEN 0      4096        127.0.0.1:3080       0.0.0.0:*    users:(("docker-proxy",pid=4422,fd=8))   
+LISTEN 0      4096    127.0.0.53%lo:53         0.0.0.0:*    users:(("systemd-resolve",pid=198,fd=15))
+LISTEN 0      4096        127.0.0.1:5435       0.0.0.0:*    users:(("docker-proxy",pid=1070359,fd=8))
+LISTEN 0      4096        127.0.0.1:5434       0.0.0.0:*    users:(("docker-proxy",pid=3952,fd=8))   
+LISTEN 0      4096        127.0.0.1:5433       0.0.0.0:*    users:(("docker-proxy",pid=4177,fd=8))   
+LISTEN 0      4096        127.0.0.1:6379       0.0.0.0:*    users:(("docker-proxy",pid=4040,fd=8))   
+LISTEN 0      4096       127.0.0.54:53         0.0.0.0:*    users:(("systemd-resolve",pid=198,fd=17))
+LISTEN 0      4096        127.0.0.1:7700       0.0.0.0:*    users:(("docker-proxy",pid=2811,fd=8))   
+LISTEN 0      4096        127.0.0.1:8002       0.0.0.0:*    users:(("docker-proxy",pid=5359,fd=8))   
+LISTEN 0      4096        127.0.0.1:8001       0.0.0.0:*    users:(("docker-proxy",pid=43161,fd=8))  
+LISTEN 0      4096        127.0.0.1:8123       0.0.0.0:*    users:(("docker-proxy",pid=4764,fd=8))   
+
+exit=0
+[2026-10-22T19:31:36+02:00 SAST / 2026-10-22T17:31:36Z UTC] END
+[2026-10-22T19:31:36+02:00 SAST / 2026-10-22T17:31:36Z UTC] BEGIN: wsl -d Ubuntu -e docker ps --no-trunc --format "table {{.ID}}\t{{.Image}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}"
+CONTAINER ID                                                       IMAGE                                                                                                             NAMES                                  STATUS                   PORTS
+df976eac765065d623bb00f05ed94bab3678403efa41e2ff5d626e8c3f8b60c7   postgres:17-alpine                                                                                                agent-tools-pg-postgres-1              Up 4 minutes (healthy)   127.0.0.1:5435->5432/tcp
+e02d137b35c89ce54952c3af032947b2ec6ccd9c5585cdac4bbc8d6375be638f   ghcr.io/clickhouse/librechat-admin-panel:latest                                                                   agentic-data-stack-admin-panel-1       Up 5 hours (healthy)     3000/tcp, 127.0.0.1:3081->3081/tcp
+b7e87ecca6ee2facc37abdc6673dfa37605935488d022691e19eaffdfe2807d0   ghcr.io/danny-avila/librechat:latest                                                                              agentic-data-stack-librechat-1         Up 5 hours (healthy)     127.0.0.1:3080->3080/tcp
+c692cb7be7a86045f5eafb063430b80018955dd0b048be69ba5bbe304a481868   docker.langfuse.com/langfuse/langfuse:4                                                                           agentic-data-stack-langfuse-web-1      Up 4 hours (healthy)     127.0.0.1:3000->3000/tcp
+4739be0815d54ff6643ff97706609851273e3727212d157e410f669218b03708   ghcr.io/danny-avila/librechat-rag-api-dev-lite:latest                                                             agentic-data-stack-rag_api-1           Up 4 hours               127.0.0.1:8001->8001/tcp
+75d68b9daf93f2ec3abbea0cfb5503ba353d1975de68310192569ae099355e3d   mcp/clickhouse                                                                                                    agentic-data-stack-clickhouse-mcp-1    Up 5 hours (healthy)     127.0.0.1:8002->8000/tcp
+c8f68a2794805a46373cd9d1582eec237c9f7a960f991406e13f24444297bacc   docker.langfuse.com/langfuse/langfuse-worker:4                                                                    agentic-data-stack-langfuse-worker-1   Up 5 hours (healthy)     127.0.0.1:3030->3030/tcp
+cf03b855c793797ac0fd97b4799abafe2d80c2db4171c698af8fb250f4d17330   docker.io/postgres:17                                                                                             agentic-data-stack-postgres-1          Up 5 hours (healthy)     127.0.0.1:5434->5432/tcp
+d9e9a7c0498a052b968bd3e9bd2e60e50a5c24d63e941ee399e44b4c3da50f68   getmeili/meilisearch:v1.12.3                                                                                      agentic-data-stack-meilisearch-1       Up 5 hours               127.0.0.1:7700->7700/tcp
+5c2d3d3d567ccb3b24ba0a0a73df971a1f4be0728234063767f4aaef7946fb39   pgvector/pgvector:0.8.0-pg15-trixie                                                                               agentic-data-stack-vectordb-1          Up 5 hours               127.0.0.1:5433->5432/tcp
+b2bca9a5d636498d51a625609456fc17d85d106c25a82940eff8b63817ba8f73   docker.io/redis:7                                                                                                 agentic-data-stack-redis-1             Up 5 hours (healthy)     127.0.0.1:6379->6379/tcp
+be2cb18f9b37a02f8930cfc42de1c85d462b2477d09fbdd2573bfd4b4531b288   docker.io/clickhouse/clickhouse-server:25.12                                                                      agentic-data-stack-clickhouse-1        Up 5 hours (healthy)     127.0.0.1:8123->8123/tcp, 127.0.0.1:9000->9000/tcp, 9009/tcp
+afbc78d90c0f1995db0edbb19e8cdfde8efcc1c32399606d490114652d49f966   mongo:8.0.17                                                                                                      agentic-data-stack-mongodb-1           Up 5 hours               127.0.0.1:27017->27017/tcp
+ded0991f119e32354025cdcca875ff1b2d3625da144fd1a3004e3de42a64ca7b   cgr.dev/chainguard/minio                                                                                          agentic-data-stack-minio-1             Up 5 hours (healthy)     127.0.0.1:9090->9000/tcp, 127.0.0.1:9091->9001/tcp
+dc161ead6399f7f86e9c6a86cdd3645f4fd3a6fa2833154449ecc1b9d1e1729f   onesilo-node:v0.4.0                                                                                               onesilo-onesilo-node-1                 Up 5 hours (healthy)     127.0.0.1:8765->8765/tcp
+3fdacdb61d9f33203bcb6da3c96711b34bd6012bdd1a24cfd430cd9e01435f85   ghcr.io/block/buzz:latest                                                                                         buzz-server-relay-1                    Up 4 hours               8080/tcp, 9102/tcp, 127.0.0.1:9300->3000/tcp
+02124f78adb76fbf6fdc52c158fdf23ca9c6dd7c5d5cbcf5af33a89c286d4baa   postgres:17-alpine                                                                                                buzz-server-postgres-1                 Up 5 hours (healthy)     5432/tcp
+3f0c702f99e97f6ea9e3bc871f389e04649a2120653368ab62b38a9c5df46dd1   redis:7-alpine                                                                                                    buzz-server-redis-1                    Up 5 hours (healthy)     6379/tcp
+3c38efe6a74b9dd558102bfba50f96c6f61289a620999593752037815f6c051c   pgsty/silo:RELEASE.2026-09-16T00-00-00Z@sha256:635197cb9f36d01bee221d34d1c7d7960f6a95c48b0b6c01d99cd13bdae51a46   buzz-server-silo-1                     Up 5 hours (healthy)     9000/tcp, 127.0.0.1:9301->9001/tcp
+
+exit=0
+[2026-10-22T19:31:36+02:00 SAST / 2026-10-22T17:31:36Z UTC] END
+[2026-10-22T19:31:36+02:00 SAST / 2026-10-22T17:31:36Z UTC] BEGIN: wsl -d Ubuntu -e docker port buzz-server-relay-1
+3000/tcp -> 127.0.0.1:9300
+
+exit=0
+[2026-10-22T19:31:36+02:00 SAST / 2026-10-22T17:31:36Z UTC] END
+[2026-10-22T19:31:36+02:00 SAST / 2026-10-22T17:31:36Z UTC] BEGIN: wsl -d Ubuntu -e docker inspect --format "{{json .HostConfig.PortBindings}}" buzz-server-relay-1
+{"3000/tcp":[{"HostIp":"127.0.0.1","HostPort":"9300"}]}
+
+exit=0
+[2026-10-22T19:31:37+02:00 SAST / 2026-10-22T17:31:37Z UTC] END
+[2026-10-22T19:31:37+02:00 SAST / 2026-10-22T17:31:37Z UTC] board host capture end
+
+==================== [B] probe host ====================
+[2026-10-22T19:29:26+02:00 SAST / 2026-10-22T17:29:26+00:00 UTC] box probe re-capture start
+### proxy env (expect none):
+(none set)
+[2026-10-22T19:29:26+02:00 SAST / 2026-10-22T17:29:26+00:00 UTC] BEGIN: tailscale --socket=/home/box/.tailscale/tailscaled.sock status
+Logged out.
+exit=1
+[2026-10-22T19:29:26+02:00 SAST / 2026-10-22T17:29:26+00:00 UTC] END
+[2026-10-22T19:29:26+02:00 SAST / 2026-10-22T17:29:26+00:00 UTC] BEGIN: curl -sS --noproxy * --max-time 15 https://api.ipify.org
+<PROBE_PUBLIC_IP>exit=0
+[2026-10-22T19:29:26+02:00 SAST / 2026-10-22T17:29:26+00:00 UTC] END
+
+##### target: board host public IP
+[2026-10-22T19:29:26+02:00 SAST / 2026-10-22T17:29:26+00:00 UTC] BEGIN: curl -sS -v -k --noproxy * --connect-timeout 10 --max-time 20 -o /dev/null -w \nTIMING remote_ip=%{remote_ip} remote_port=%{remote_port} http_code=%{http_code} time_namelookup=%{time_namelookup}s time_connect=%{time_connect}s time_appconnect=%{time_appconnect}s time_starttransfer=%{time_starttransfer}s time_total=%{time_total}s\n http://<PUBLIC_IP>:8401/
+*   Trying <PUBLIC_IP>:8401...
+* Connection timed out after 10002 milliseconds
+* closing connection #0
+curl: (28) Connection timed out after 10002 milliseconds
+
+TIMING remote_ip= remote_port=-1 http_code=000 time_namelookup=0.000012s time_connect=0.000000s time_appconnect=0.000000s time_starttransfer=0.000000s time_total=10.002508s
+exit=28
+[2026-10-22T19:29:36+02:00 SAST / 2026-10-22T17:29:36+00:00 UTC] END
+[2026-10-22T19:29:36+02:00 SAST / 2026-10-22T17:29:36+00:00 UTC] BEGIN: curl -sS -v -k --noproxy * --connect-timeout 10 --max-time 20 -o /dev/null -w \nTIMING remote_ip=%{remote_ip} remote_port=%{remote_port} http_code=%{http_code} time_namelookup=%{time_namelookup}s time_connect=%{time_connect}s time_appconnect=%{time_appconnect}s time_starttransfer=%{time_starttransfer}s time_total=%{time_total}s\n https://<PUBLIC_IP>:8401/
+*   Trying <PUBLIC_IP>:8401...
+* Connection timed out after 10002 milliseconds
+* closing connection #0
+curl: (28) Connection timed out after 10002 milliseconds
+
+TIMING remote_ip= remote_port=-1 http_code=000 time_namelookup=0.000014s time_connect=0.000000s time_appconnect=0.000000s time_starttransfer=0.000000s time_total=10.002203s
+exit=28
+[2026-10-22T19:29:46+02:00 SAST / 2026-10-22T17:29:46+00:00 UTC] END
+[2026-10-22T19:29:46+02:00 SAST / 2026-10-22T17:29:46+00:00 UTC] BEGIN: nc -vz -w 10 <PUBLIC_IP> 8401
+nc: connect to <PUBLIC_IP> port 8401 (tcp) timed out: Operation now in progress
+exit=1
+[2026-10-22T19:29:56+02:00 SAST / 2026-10-22T17:29:56+00:00 UTC] END
+[2026-10-22T19:29:56+02:00 SAST / 2026-10-22T17:29:56+00:00 UTC] BEGIN: curl -sS -v -k --noproxy * --connect-timeout 10 --max-time 20 -o /dev/null -w \nTIMING remote_ip=%{remote_ip} remote_port=%{remote_port} http_code=%{http_code} time_namelookup=%{time_namelookup}s time_connect=%{time_connect}s time_appconnect=%{time_appconnect}s time_starttransfer=%{time_starttransfer}s time_total=%{time_total}s\n http://<PUBLIC_IP>:9300/
+*   Trying <PUBLIC_IP>:9300...
+* Connection timed out after 10002 milliseconds
+* closing connection #0
+curl: (28) Connection timed out after 10002 milliseconds
+
+TIMING remote_ip= remote_port=-1 http_code=000 time_namelookup=0.000022s time_connect=0.000000s time_appconnect=0.000000s time_starttransfer=0.000000s time_total=10.003007s
+exit=28
+[2026-10-22T19:30:06+02:00 SAST / 2026-10-22T17:30:06+00:00 UTC] END
+[2026-10-22T19:30:06+02:00 SAST / 2026-10-22T17:30:06+00:00 UTC] BEGIN: curl -sS -v -k --noproxy * --connect-timeout 10 --max-time 20 -o /dev/null -w \nTIMING remote_ip=%{remote_ip} remote_port=%{remote_port} http_code=%{http_code} time_namelookup=%{time_namelookup}s time_connect=%{time_connect}s time_appconnect=%{time_appconnect}s time_starttransfer=%{time_starttransfer}s time_total=%{time_total}s\n https://<PUBLIC_IP>:9300/
+*   Trying <PUBLIC_IP>:9300...
+* Connection timed out after 10002 milliseconds
+* closing connection #0
+curl: (28) Connection timed out after 10002 milliseconds
+
+TIMING remote_ip= remote_port=-1 http_code=000 time_namelookup=0.000018s time_connect=0.000000s time_appconnect=0.000000s time_starttransfer=0.000000s time_total=10.002965s
+exit=28
+[2026-10-22T19:30:16+02:00 SAST / 2026-10-22T17:30:16+00:00 UTC] END
+[2026-10-22T19:30:16+02:00 SAST / 2026-10-22T17:30:16+00:00 UTC] BEGIN: nc -vz -w 10 <PUBLIC_IP> 9300
+nc: connect to <PUBLIC_IP> port 9300 (tcp) timed out: Operation now in progress
+exit=1
+[2026-10-22T19:30:26+02:00 SAST / 2026-10-22T17:30:26+00:00 UTC] END
+##### egress controls: portquiz.net (by IP 35.180.86.68; hostname resolution on this host is sandbox-intercepted) listens on every TCP port
+[2026-10-22T19:30:26+02:00 SAST / 2026-10-22T17:30:26+00:00 UTC] BEGIN: nc -vz -w 10 35.180.86.68 8401
+Connection to 35.180.86.68 8401 port [tcp/*] succeeded!
+exit=0
+[2026-10-22T19:30:26+02:00 SAST / 2026-10-22T17:30:26+00:00 UTC] END
+[2026-10-22T19:30:26+02:00 SAST / 2026-10-22T17:30:26+00:00 UTC] BEGIN: curl -sS --noproxy * --connect-timeout 10 --max-time 20 -w \nTIMING remote_ip=%{remote_ip} remote_port=%{remote_port} http_code=%{http_code} time_namelookup=%{time_namelookup}s time_connect=%{time_connect}s time_appconnect=%{time_appconnect}s time_starttransfer=%{time_starttransfer}s time_total=%{time_total}s\n http://35.180.86.68:8401/
+Port test successful!
+Your IP: <PROBE_EGRESS_IP_2>
+
+TIMING remote_ip=35.180.86.68 remote_port=8401 http_code=200 time_namelookup=0.000018s time_connect=0.083636s time_appconnect=0.000000s time_starttransfer=0.169575s time_total=0.169599s
+exit=0
+[2026-10-22T19:30:26+02:00 SAST / 2026-10-22T17:30:26+00:00 UTC] END
+[2026-10-22T19:30:26+02:00 SAST / 2026-10-22T17:30:26+00:00 UTC] BEGIN: nc -vz -w 10 35.180.86.68 9300
+Connection to 35.180.86.68 9300 port [tcp/*] succeeded!
+exit=0
+[2026-10-22T19:30:26+02:00 SAST / 2026-10-22T17:30:26+00:00 UTC] END
+[2026-10-22T19:30:26+02:00 SAST / 2026-10-22T17:30:26+00:00 UTC] BEGIN: curl -sS --noproxy * --connect-timeout 10 --max-time 20 -w \nTIMING remote_ip=%{remote_ip} remote_port=%{remote_port} http_code=%{http_code} time_namelookup=%{time_namelookup}s time_connect=%{time_connect}s time_appconnect=%{time_appconnect}s time_starttransfer=%{time_starttransfer}s time_total=%{time_total}s\n http://35.180.86.68:9300/
+Port test successful!
+Your IP: <PROBE_EGRESS_IP_2>
+
+TIMING remote_ip=35.180.86.68 remote_port=9300 http_code=200 time_namelookup=0.000015s time_connect=0.082909s time_appconnect=0.000000s time_starttransfer=0.168960s time_total=0.168987s
+exit=0
+[2026-10-22T19:30:27+02:00 SAST / 2026-10-22T17:30:27+00:00 UTC] END
+##### negative control: TEST-NET-1 192.0.2.1 (unroutable)
+[2026-10-22T19:30:27+02:00 SAST / 2026-10-22T17:30:27+00:00 UTC] BEGIN: nc -vz -w 10 192.0.2.1 8401
+nc: connect to 192.0.2.1 port 8401 (tcp) timed out: Operation now in progress
+exit=1
+[2026-10-22T19:30:37+02:00 SAST / 2026-10-22T17:30:37+00:00 UTC] END
+[2026-10-22T19:30:37+02:00 SAST / 2026-10-22T17:30:37+00:00 UTC] BEGIN: curl -sS --noproxy * --connect-timeout 10 --max-time 20 -o /dev/null -w \nTIMING remote_ip=%{remote_ip} remote_port=%{remote_port} http_code=%{http_code} time_namelookup=%{time_namelookup}s time_connect=%{time_connect}s time_appconnect=%{time_appconnect}s time_starttransfer=%{time_starttransfer}s time_total=%{time_total}s\n http://192.0.2.1:8401/
+curl: (28) Connection timed out after 10002 milliseconds
+
+TIMING remote_ip= remote_port=-1 http_code=000 time_namelookup=0.000014s time_connect=0.000000s time_appconnect=0.000000s time_starttransfer=0.000000s time_total=10.002560s
+exit=28
+[2026-10-22T19:30:47+02:00 SAST / 2026-10-22T17:30:47+00:00 UTC] END
+[2026-10-22T19:30:47+02:00 SAST / 2026-10-22T17:30:47+00:00 UTC] BEGIN: nc -vz -w 10 192.0.2.1 9300
+nc: connect to 192.0.2.1 port 9300 (tcp) timed out: Operation now in progress
+exit=1
+[2026-10-22T19:30:57+02:00 SAST / 2026-10-22T17:30:57+00:00 UTC] END
+[2026-10-22T19:30:57+02:00 SAST / 2026-10-22T17:30:57+00:00 UTC] BEGIN: curl -sS --noproxy * --connect-timeout 10 --max-time 20 -o /dev/null -w \nTIMING remote_ip=%{remote_ip} remote_port=%{remote_port} http_code=%{http_code} time_namelookup=%{time_namelookup}s time_connect=%{time_connect}s time_appconnect=%{time_appconnect}s time_starttransfer=%{time_starttransfer}s time_total=%{time_total}s\n http://192.0.2.1:9300/
+curl: (28) Connection timed out after 10002 milliseconds
+
+TIMING remote_ip= remote_port=-1 http_code=000 time_namelookup=0.000014s time_connect=0.000000s time_appconnect=0.000000s time_starttransfer=0.000000s time_total=10.002877s
+exit=28
+[2026-10-22T19:31:07+02:00 SAST / 2026-10-22T17:31:07+00:00 UTC] END
+##### public DNS for the tailnet name (DoH, not intercepted)
+[2026-10-22T19:31:07+02:00 SAST / 2026-10-22T17:31:07+00:00 UTC] BEGIN: curl -sS --noproxy * --max-time 15 -H accept: application/dns-json https://cloudflare-dns.com/dns-query?name=<TAILNET_HOST>&type=A
+{"Status":3,"TC":false,"RD":true,"RA":true,"AD":false,"CD":false,"Question":[{"name":"<TAILNET_HOST>","type":1}],"Authority":[{"name":"ts.net","type":6,"TTL":300,"data":"ns1.dnsimple.com. admin.dnsimple.com. 1629553741 86400 7200 604800 300"}]}exit=0
+[2026-10-22T19:31:07+02:00 SAST / 2026-10-22T17:31:07+00:00 UTC] END
+
+[2026-10-22T19:31:07+02:00 SAST / 2026-10-22T17:31:07+00:00 UTC] BEGIN: curl -sS --noproxy * --max-time 15 -H accept: application/dns-json https://dns.google/resolve?name=<TAILNET_HOST>&type=A
+{"Status":3,"TC":false,"RD":true,"RA":true,"AD":false,"CD":false,"Question":[{"name":"<TAILNET_HOST>.","type":1}],"Authority":[{"name":"ts.net.","type":6,"TTL":300,"data":"ns1.dnsimple.com. admin.dnsimple.com. 1629553741 86400 7200 604800 300"}],"Comment":"Response from 199.247.153.53."}exit=0
+[2026-10-22T19:31:07+02:00 SAST / 2026-10-22T17:31:07+00:00 UTC] END
+
+[2026-10-22T19:31:07+02:00 SAST / 2026-10-22T17:31:07+00:00 UTC] BEGIN: tailscale status (re-check at end)
+Logged out.
+exit=1
+[2026-10-22T19:31:07+02:00 SAST / 2026-10-22T17:31:07+00:00 UTC] END
+[2026-10-22T19:31:07+02:00 SAST / 2026-10-22T17:31:07+00:00 UTC] box probe re-capture end

@@ -186,3 +186,23 @@ every PR.
 ## License
 
 [MIT](LICENSE)
+
+## Rich-server layout (canonical)
+
+On RICH-SERVER this fork is checked out as:
+
+```text
+repositories/RichardvZyl/buzzboard/
+  root/                         # base checkout (trunk sync only)
+  <worktree>/                   # feature worktrees beside root
+```
+
+| Piece | Path |
+|---|---|
+| SPA (served `:8401`) | `spa/` |
+| Bot CLI + roster | `cli/` |
+| Host config | `%LOCALAPPDATA%\buzz-board\` (not in git) |
+| Card events | Buzz relay / docker volume `buzz-server_pg` |
+
+Do **not** put board code under `Grok-Bot-Workspace` (scratch / import-export only).
+

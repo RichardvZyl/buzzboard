@@ -1,0 +1,345 @@
+﻿{
+    "ac":  "AC2",
+    "generated":  "2026-10-22T04:56:54.1861899+02:00",
+    "lane":  "30617:536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185:a2a-work",
+    "actions":  [
+                    {
+                        "issue":  "b099f32cd8f2c2618f1a8e9392599f9e2376dfd898e4b0f79f513639215ab098",
+                        "posted_by":  "engineering-lead",
+                        "post_pubkey":  "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185",
+                        "claimed_by":  "delegation-bot",
+                        "claim_pubkey":  "b455c6c60ce9b8c77658e4f1535bb1432712c9394b3d85e838f933f88aee0dca",
+                        "claim_event":  "8b970d884a0fa950a6539ee65c00e272b613df9ddb1512b4d459f3877e4c9416",
+                        "closed_by":  "delegation-bot",
+                        "close_pubkey":  "b455c6c60ce9b8c77658e4f1535bb1432712c9394b3d85e838f933f88aee0dca",
+                        "close_event":  "3fc8a98fcd5047b5ffbf3558bdcb38b77f84adaab0cbd1d987425c3fc91826dc"
+                    },
+                    {
+                        "issue":  "e5394235a9a3fd86d6da28dee423f8b52021a32d5e8318340081d311a89b6ecb",
+                        "posted_by":  "delegation-bot",
+                        "post_pubkey":  "b455c6c60ce9b8c77658e4f1535bb1432712c9394b3d85e838f933f88aee0dca",
+                        "claimed_by":  "qa-bot",
+                        "claim_pubkey":  "9bb4d8c5b4e759c1c3880a3d07d7e5af00742de04d72d89e687c9bea06f7e6fb",
+                        "claim_event":  "31cc672354887cd7b54969454652ddbaaf1a38b1b446b3dff0b4a9e3407f5274",
+                        "closed_by":  "qa-bot",
+                        "close_pubkey":  "9bb4d8c5b4e759c1c3880a3d07d7e5af00742de04d72d89e687c9bea06f7e6fb",
+                        "close_event":  "7874c698e4bdf267a606bc2483d92648cf38a7fa7bf055b1ae40c163c3aae2a8"
+                    },
+                    {
+                        "issue":  "58ac18dfe6571f8dbbf1d5659a4458e105aa67cbb0e78c33cb397f58d2874a09",
+                        "posted_by":  "qa-bot",
+                        "post_pubkey":  "9bb4d8c5b4e759c1c3880a3d07d7e5af00742de04d72d89e687c9bea06f7e6fb",
+                        "claimed_by":  "engineering-lead",
+                        "claim_pubkey":  "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185",
+                        "claim_event":  "0fd9047d299b03825a899e0430defbe297374c41c79eafddf56c5db12d43bba2",
+                        "closed_by":  "engineering-lead",
+                        "close_pubkey":  "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185",
+                        "close_event":  "806223da0b4a2872448723912b3ccac23251b447db62321b5830a9c0e3737ca3"
+                    }
+                ],
+    "cards":  [
+                  {
+                      "card":  {
+                                   "id":  "b099f32cd8f2c2618f1a8e9392599f9e2376dfd898e4b0f79f513639215ab098",
+                                   "subject":  "AC2 test task posted by engineering-lead",
+                                   "author":  "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185",
+                                   "assignee":  "b455c6c60ce9b8c77658e4f1535bb1432712c9394b3d85e838f933f88aee0dca",
+                                   "column":  "closed",
+                                   "labels":  [
+                                                  "ac2-test"
+                                              ],
+                                   "fixture":  null,
+                                   "statusEvents":  2
+                               },
+                      "issue":  {
+                                    "id":  "b099f32cd8f2c2618f1a8e9392599f9e2376dfd898e4b0f79f513639215ab098",
+                                    "kind":  1621,
+                                    "pubkey":  "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185",
+                                    "npub":  "npub12dh8fah3xw8fnnelteux0hc5y7ms9rvgmfe4tq9crc6tlenh6xzskvs7jq",
+                                    "created_at":  1792637800,
+                                    "tags":  [
+                                                 [
+                                                     "a",
+                                                     "30617:536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185:a2a-work"
+                                                 ],
+                                                 [
+                                                     "p",
+                                                     "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185"
+                                                 ],
+                                                 [
+                                                     "subject",
+                                                     "AC2 test task posted by engineering-lead"
+                                                 ],
+                                                 [
+                                                     "t",
+                                                     "ac2-test"
+                                                 ]
+                                             ],
+                                    "content":  "Buzz Board v0 AC2 smoke test. Posted by engineering-lead; to be claimed and closed by delegation-bot.",
+                                    "sig":  "281cb9dc480894ea45b12119fd545f04fd75bc47c0734072369c98206b2ce625160b6dc144286ffcd9dc271bb5b2c1de6bcb08df0d4effcc2a9b7ca343be87af"
+                                },
+                      "statuses":  [
+                                       {
+                                           "id":  "8b970d884a0fa950a6539ee65c00e272b613df9ddb1512b4d459f3877e4c9416",
+                                           "kind":  1630,
+                                           "pubkey":  "b455c6c60ce9b8c77658e4f1535bb1432712c9394b3d85e838f933f88aee0dca",
+                                           "npub":  "npub1k32ud3svaxuvwajcunc4xka3gvn39jfefv7ct6pclyel3zhwph9qxjw5mj",
+                                           "created_at":  1792637801,
+                                           "tags":  [
+                                                        [
+                                                            "e",
+                                                            "b099f32cd8f2c2618f1a8e9392599f9e2376dfd898e4b0f79f513639215ab098",
+                                                            "",
+                                                            "root"
+                                                        ],
+                                                        [
+                                                            "a",
+                                                            "30617:536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185:a2a-work"
+                                                        ],
+                                                        [
+                                                            "p",
+                                                            "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185"
+                                                        ],
+                                                        [
+                                                            "t",
+                                                            "in-progress"
+                                                        ],
+                                                        [
+                                                            "assignee",
+                                                            "b455c6c60ce9b8c77658e4f1535bb1432712c9394b3d85e838f933f88aee0dca"
+                                                        ]
+                                                    ],
+                                           "content":  "claimed by delegation-bot",
+                                           "sig":  "492c189a655b73e4a6e2ddd69508832c6e22fed0bb9f0bc20532af45b1146b71b7036d5d1cfb39ac7c38279786438ac3df5fc224c31ef1f09d5397ef4c2c6ba7"
+                                       },
+                                       {
+                                           "id":  "3fc8a98fcd5047b5ffbf3558bdcb38b77f84adaab0cbd1d987425c3fc91826dc",
+                                           "kind":  1632,
+                                           "pubkey":  "b455c6c60ce9b8c77658e4f1535bb1432712c9394b3d85e838f933f88aee0dca",
+                                           "npub":  "npub1k32ud3svaxuvwajcunc4xka3gvn39jfefv7ct6pclyel3zhwph9qxjw5mj",
+                                           "created_at":  1792637804,
+                                           "tags":  [
+                                                        [
+                                                            "e",
+                                                            "b099f32cd8f2c2618f1a8e9392599f9e2376dfd898e4b0f79f513639215ab098",
+                                                            "",
+                                                            "root"
+                                                        ],
+                                                        [
+                                                            "a",
+                                                            "30617:536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185:a2a-work"
+                                                        ],
+                                                        [
+                                                            "p",
+                                                            "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185"
+                                                        ]
+                                                    ],
+                                           "content":  "AC2 test complete, closed by delegation-bot",
+                                           "sig":  "7a48926e11389f05ca2310193f776fdc746272829329368828465a0894d98548dc2455f34332a8cfdeedb3fde69d1f0f2695a2f7c8a6d98506f22c4172c148f6"
+                                       }
+                                   ]
+                  },
+                  {
+                      "card":  {
+                                   "id":  "e5394235a9a3fd86d6da28dee423f8b52021a32d5e8318340081d311a89b6ecb",
+                                   "subject":  "AC2 test task posted by delegation-bot",
+                                   "author":  "b455c6c60ce9b8c77658e4f1535bb1432712c9394b3d85e838f933f88aee0dca",
+                                   "assignee":  "9bb4d8c5b4e759c1c3880a3d07d7e5af00742de04d72d89e687c9bea06f7e6fb",
+                                   "column":  "closed",
+                                   "labels":  [
+                                                  "ac2-test"
+                                              ],
+                                   "fixture":  null,
+                                   "statusEvents":  2
+                               },
+                      "issue":  {
+                                    "id":  "e5394235a9a3fd86d6da28dee423f8b52021a32d5e8318340081d311a89b6ecb",
+                                    "kind":  1621,
+                                    "pubkey":  "b455c6c60ce9b8c77658e4f1535bb1432712c9394b3d85e838f933f88aee0dca",
+                                    "npub":  "npub1k32ud3svaxuvwajcunc4xka3gvn39jfefv7ct6pclyel3zhwph9qxjw5mj",
+                                    "created_at":  1792637804,
+                                    "tags":  [
+                                                 [
+                                                     "a",
+                                                     "30617:536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185:a2a-work"
+                                                 ],
+                                                 [
+                                                     "p",
+                                                     "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185"
+                                                 ],
+                                                 [
+                                                     "subject",
+                                                     "AC2 test task posted by delegation-bot"
+                                                 ],
+                                                 [
+                                                     "t",
+                                                     "ac2-test"
+                                                 ]
+                                             ],
+                                    "content":  "Buzz Board v0 AC2 smoke test. Posted by delegation-bot; to be claimed and closed by qa-bot.",
+                                    "sig":  "aeba07930e27d222adca3ce69a4209ca566340b960dae63cd41f0d7785bfaa408a78927049b694334f355400a3483b675d08d11c21d5c7c69689d68a6112bd1a"
+                                },
+                      "statuses":  [
+                                       {
+                                           "id":  "31cc672354887cd7b54969454652ddbaaf1a38b1b446b3dff0b4a9e3407f5274",
+                                           "kind":  1630,
+                                           "pubkey":  "9bb4d8c5b4e759c1c3880a3d07d7e5af00742de04d72d89e687c9bea06f7e6fb",
+                                           "npub":  "npub1nw6d33d5uavursugpg7s04l94uq8gt0qf4ed38ng0jd75phhumas85xejd",
+                                           "created_at":  1792637805,
+                                           "tags":  [
+                                                        [
+                                                            "e",
+                                                            "e5394235a9a3fd86d6da28dee423f8b52021a32d5e8318340081d311a89b6ecb",
+                                                            "",
+                                                            "root"
+                                                        ],
+                                                        [
+                                                            "a",
+                                                            "30617:536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185:a2a-work"
+                                                        ],
+                                                        [
+                                                            "p",
+                                                            "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185"
+                                                        ],
+                                                        [
+                                                            "t",
+                                                            "in-progress"
+                                                        ],
+                                                        [
+                                                            "assignee",
+                                                            "9bb4d8c5b4e759c1c3880a3d07d7e5af00742de04d72d89e687c9bea06f7e6fb"
+                                                        ]
+                                                    ],
+                                           "content":  "claimed by qa-bot",
+                                           "sig":  "7b5667bd350177bbf1c5043b088adbd63ce773245de3b9a7ae5479f1f2817b8d70ce55ee12efaa06a219d776d1fbf4a253b44d5436e621622fb0e7128e102774"
+                                       },
+                                       {
+                                           "id":  "7874c698e4bdf267a606bc2483d92648cf38a7fa7bf055b1ae40c163c3aae2a8",
+                                           "kind":  1632,
+                                           "pubkey":  "9bb4d8c5b4e759c1c3880a3d07d7e5af00742de04d72d89e687c9bea06f7e6fb",
+                                           "npub":  "npub1nw6d33d5uavursugpg7s04l94uq8gt0qf4ed38ng0jd75phhumas85xejd",
+                                           "created_at":  1792637808,
+                                           "tags":  [
+                                                        [
+                                                            "e",
+                                                            "e5394235a9a3fd86d6da28dee423f8b52021a32d5e8318340081d311a89b6ecb",
+                                                            "",
+                                                            "root"
+                                                        ],
+                                                        [
+                                                            "a",
+                                                            "30617:536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185:a2a-work"
+                                                        ],
+                                                        [
+                                                            "p",
+                                                            "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185"
+                                                        ]
+                                                    ],
+                                           "content":  "AC2 test complete, closed by qa-bot",
+                                           "sig":  "806c1ddc244949825d2f54a142d393eeab53d12af1eaa4d5c4bf81d38f103575651d77933ffe3cc56831494aacec7e3373454a1277da84ce6e1d32b7223431bb"
+                                       }
+                                   ]
+                  },
+                  {
+                      "card":  {
+                                   "id":  "58ac18dfe6571f8dbbf1d5659a4458e105aa67cbb0e78c33cb397f58d2874a09",
+                                   "subject":  "AC2 test task posted by qa-bot",
+                                   "author":  "9bb4d8c5b4e759c1c3880a3d07d7e5af00742de04d72d89e687c9bea06f7e6fb",
+                                   "assignee":  "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185",
+                                   "column":  "closed",
+                                   "labels":  [
+                                                  "ac2-test"
+                                              ],
+                                   "fixture":  null,
+                                   "statusEvents":  2
+                               },
+                      "issue":  {
+                                    "id":  "58ac18dfe6571f8dbbf1d5659a4458e105aa67cbb0e78c33cb397f58d2874a09",
+                                    "kind":  1621,
+                                    "pubkey":  "9bb4d8c5b4e759c1c3880a3d07d7e5af00742de04d72d89e687c9bea06f7e6fb",
+                                    "npub":  "npub1nw6d33d5uavursugpg7s04l94uq8gt0qf4ed38ng0jd75phhumas85xejd",
+                                    "created_at":  1792637808,
+                                    "tags":  [
+                                                 [
+                                                     "a",
+                                                     "30617:536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185:a2a-work"
+                                                 ],
+                                                 [
+                                                     "p",
+                                                     "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185"
+                                                 ],
+                                                 [
+                                                     "subject",
+                                                     "AC2 test task posted by qa-bot"
+                                                 ],
+                                                 [
+                                                     "t",
+                                                     "ac2-test"
+                                                 ]
+                                             ],
+                                    "content":  "Buzz Board v0 AC2 smoke test. Posted by qa-bot; to be claimed and closed by engineering-lead.",
+                                    "sig":  "0266dcf02c94ceb7b3dda1cb045b4a47f281e2e2b8676b5a5c2e00674eccb736a6db5fca5432dc7f7c6f95754d2d6217880eb9bbfc67962ef279fac5797142a4"
+                                },
+                      "statuses":  [
+                                       {
+                                           "id":  "0fd9047d299b03825a899e0430defbe297374c41c79eafddf56c5db12d43bba2",
+                                           "kind":  1630,
+                                           "pubkey":  "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185",
+                                           "npub":  "npub12dh8fah3xw8fnnelteux0hc5y7ms9rvgmfe4tq9crc6tlenh6xzskvs7jq",
+                                           "created_at":  1792637810,
+                                           "tags":  [
+                                                        [
+                                                            "e",
+                                                            "58ac18dfe6571f8dbbf1d5659a4458e105aa67cbb0e78c33cb397f58d2874a09",
+                                                            "",
+                                                            "root"
+                                                        ],
+                                                        [
+                                                            "a",
+                                                            "30617:536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185:a2a-work"
+                                                        ],
+                                                        [
+                                                            "p",
+                                                            "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185"
+                                                        ],
+                                                        [
+                                                            "t",
+                                                            "in-progress"
+                                                        ],
+                                                        [
+                                                            "assignee",
+                                                            "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185"
+                                                        ]
+                                                    ],
+                                           "content":  "claimed by engineering-lead",
+                                           "sig":  "eb437b372fb6af297b8412f8541b76135118588862d039ef98f03325e7c25087413dceb956579eb32aac4721c018937a9484555db86fc4ea14b9250a34ead3ad"
+                                       },
+                                       {
+                                           "id":  "806223da0b4a2872448723912b3ccac23251b447db62321b5830a9c0e3737ca3",
+                                           "kind":  1632,
+                                           "pubkey":  "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185",
+                                           "npub":  "npub12dh8fah3xw8fnnelteux0hc5y7ms9rvgmfe4tq9crc6tlenh6xzskvs7jq",
+                                           "created_at":  1792637812,
+                                           "tags":  [
+                                                        [
+                                                            "e",
+                                                            "58ac18dfe6571f8dbbf1d5659a4458e105aa67cbb0e78c33cb397f58d2874a09",
+                                                            "",
+                                                            "root"
+                                                        ],
+                                                        [
+                                                            "a",
+                                                            "30617:536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185:a2a-work"
+                                                        ],
+                                                        [
+                                                            "p",
+                                                            "536e74f6f1338e99cf3f5e7867df1427b7028d88da735580b81e34bfe677d185"
+                                                        ]
+                                                    ],
+                                           "content":  "AC2 test complete, closed by engineering-lead",
+                                           "sig":  "9251ef08b84f93d511a3079b662a17251afaba37011fc6b743803ff7cd7ec413422effb5a6819ff996197d48a0fc22e5ad34231a0d253bd5d7ac5ca588e89d25"
+                                       }
+                                   ]
+                  }
+              ]
+}

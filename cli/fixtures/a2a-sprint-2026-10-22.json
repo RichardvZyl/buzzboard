@@ -1,0 +1,103 @@
+{
+  "fixtureId": "a2a-sprint-2026-10-22@4555c7ffe0bd",
+  "source": "markdown sprint tracker for 2026-10-22 (01:55-02:55 SAST); read-only, not modified",
+  "sourceSha256": "4555c7ffe0bde597a5b682e268392acab040ad5dec594bead14da9f0dd554181",
+  "statusMapping": {
+    "Done": "kind 1631 by importer -> Done column",
+    "Dropped": "kind 1632 -> Closed column",
+    "Halted": "no status event, label \"halted\" -> Backlog"
+  },
+  "redaction": "host paths replaced with <path>",
+  "tasks": [
+    {
+      "row": "1",
+      "title": "PR #3 personal-info cleanup",
+      "owner": "SWE",
+      "status": "Done",
+      "labels": [],
+      "note": "Pushed and still a draft, with commits 25f765a, 2161329 and f2aa579. SWE says the history rewrite was approved by Richard. tsc passes and the secret scan is clean. Follow-ups: a separate PR to clean master's docs, and an updated PR description."
+    },
+    {
+      "row": "2",
+      "title": "OpenShell Devin pilot drafts",
+      "owner": "Engineering Lead",
+      "status": "Done",
+      "labels": [],
+      "note": "Committed as ccb18d5 on sandbox-pilot/openshell-devin, pinned to OpenShell v0.1.5. Nothing was built or run. 15 decisions are open for Richard."
+    },
+    {
+      "row": "3",
+      "title": "Switchyard routes.toml draft + peer-shim spec",
+      "owner": "SE Bot",
+      "status": "Done",
+      "labels": [],
+      "note": "Committed as 3685ac5 on draft/switchyard-routing, with copies in <path> Merging into main needs Richard."
+    },
+    {
+      "row": "4",
+      "title": "A2A map update",
+      "owner": "figma bro",
+      "status": "Halted",
+      "labels": [
+        "halted"
+      ],
+      "note": "figma bro says Richard told it to stop at 01:55, so it won't resume unless he asks. The FigJam file may be only partly updated. Figma Starter seat allows only 20 read calls a month."
+    },
+    {
+      "row": "5",
+      "title": "ChatNow consultant design",
+      "owner": "Supervisor Bot",
+      "status": "Done",
+      "labels": [],
+      "note": "Saved at <path>, with 17 open items for Richard. Nothing was sent to ChatNow."
+    },
+    {
+      "row": "6",
+      "title": "Cloud-agents plan + Grok Bot agent cards",
+      "owner": "Alfred",
+      "status": "Done",
+      "labels": [],
+      "note": "01:59 SAST: a2a-cloud-agents-plan.md written (docs only; all suggested, OPEN)"
+    },
+    {
+      "row": "7",
+      "title": "PM T1: turn-chain hash check",
+      "owner": "Delegation Bot",
+      "status": "Done",
+      "labels": [],
+      "note": "21ba008: 212 entries, 0 breaks. OPEN: entries cut off the end can't be detected unless the head hash is published somewhere."
+    },
+    {
+      "row": "8",
+      "title": "PM T2: peer readiness matrix",
+      "owner": "Delegation Bot",
+      "status": "Done",
+      "labels": [],
+      "note": "d0ae1d5: 8 peers work. gemini-pro, cline-mimo, gemini-flash and copilot failed; killing gemini-flash's stuck run needs Richard's OK. 5 weren't probed."
+    },
+    {
+      "row": "9",
+      "title": "PM T3: front-door model pin draft",
+      "owner": "Delegation Bot",
+      "status": "Done",
+      "labels": [],
+      "note": "c8ed22a and 89e6f16: patch drafted but not applied. Richard picks the model id."
+    },
+    {
+      "row": "10",
+      "title": "PM T4: doc drift report",
+      "owner": "Delegation Bot",
+      "status": "Done",
+      "labels": [],
+      "note": "89e6f16: 14 stale old-host references, 6 stale items in continue.md, 8 places that contradict ADR 0004."
+    },
+    {
+      "row": "x1",
+      "title": "PM T5",
+      "owner": "unassigned",
+      "status": "Dropped",
+      "labels": [],
+      "note": "Covered by PR #3"
+    }
+  ]
+}

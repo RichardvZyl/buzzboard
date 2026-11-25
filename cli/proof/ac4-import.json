@@ -1,0 +1,60 @@
+﻿{
+  "fixtureId": "a2a-sprint-2026-10-22@4555c7ffe0bd",
+  "results": [
+    {
+      "row": "1",
+      "issue": "3af591403b4f3de2b0f583c21af10446787ec21be1fbb27f5f87b7e42065b7c9",
+      "status": "Done"
+    },
+    {
+      "row": "2",
+      "issue": "bd4c6124ef9d520b69bd3e685460d39bcb465e7c3d733b633a9d45887273c18d",
+      "status": "Done"
+    },
+    {
+      "row": "3",
+      "issue": "6be847b5325d697bda0cb19e514c91a2f3de3272dea3dc01cff4ceb7bb38a2b1",
+      "status": "Done"
+    },
+    {
+      "row": "4",
+      "issue": "1de3a01baf90651d9ce0d34ac1dc504c965550b80fe8cf99900a422bc1549a88",
+      "status": "Halted"
+    },
+    {
+      "row": "5",
+      "issue": "80f36d52963d13978e8fcd5aeb309cc9b820ba0f1213fafd1ce4881070e5f0c2",
+      "status": "Done"
+    },
+    {
+      "row": "6",
+      "issue": "3e9a895dc0c1038d9322a70ed17cd2139c2eb5302591710e5087d9ef53d89626",
+      "status": "Done"
+    },
+    {
+      "row": "7",
+      "issue": "a5611843e0f83f26e696b246d1e611dcf399c04cde7376ae0f3b59bc2c5be7ef",
+      "status": "Done"
+    },
+    {
+      "row": "8",
+      "issue": "fc64b8dbc06d032e56315a834f1e6baa4570f2e06175fba4616b92f062c9a5ba",
+      "status": "Done"
+    },
+    {
+      "row": "9",
+      "issue": "7670e07bc12834f398a77a7e74a3342437ff720f82da14f95cf94cf5f1c7b86b",
+      "status": "Done"
+    },
+    {
+      "row": "10",
+      "issue": "79bdf3c6245d258a9271ae55f5ff33e6891ea880b7fcaec11e69b24a69821e1b",
+      "status": "Done"
+    },
+    {
+      "row": "x1",
+      "issue": "79a5494836e58bff1bbe27d37ff1f722989522376ffd0a94b8b7772529bf18e7",
+      "status": "Dropped"
+    }
+  ]
+}

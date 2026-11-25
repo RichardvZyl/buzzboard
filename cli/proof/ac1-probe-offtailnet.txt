@@ -1,0 +1,14 @@
+== AC1 off-tailnet probe from an internet host that is NOT on the tailnet (2026-10-22 04:55:33 +0200)
+-- DNS lookup of the tailnet name:
+   this host's resolver answered 198.18.0.1 (its own egress-proxy placeholder in the 198.18.0.0/15 benchmark range, not the board host); every connection below timed out
+-- curl https://<tailnet-host>:8401/
+   curl: (28) Connection timed out after 8002 milliseconds
+      http=000
+-- TCP connect <tailnet-ip>:8401
+   NO CONNECTION (exit 124)
+-- curl https://<tailnet-host>:9300/
+   curl: (28) Connection timed out after 8002 milliseconds
+      http=000
+-- TCP connect <tailnet-ip>:9300
+   NO CONNECTION (exit 124)
+== RESULT: PASS (no connection to the board or relay from off the tailnet)
