@@ -107,6 +107,36 @@ export function NewCardModal({ lane, session, syncAgentName, spinFrom, close, re
   );
 }
 
+function ReviewPane({ card }: { card: Card }) {
+  const report = card.reviewReport;
+  const pullRequestPattern = /https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/pull\/[1-9]\d*(?=$|[\s)\]>.,;!?#/])/gi;
+  const pullRequests = [...new Set([...(`${report ?? ""}\n${card.body}`).matchAll(pullRequestPattern)]
+    .map(([url]) => url))];
+
+  return (
+    <section className="review-pane" aria-labelledby="card-review-heading">
+      <h3 id="card-review-heading">Review</h3>
+      {pullRequests.length > 0 ? (
+        <ul>
+          {pullRequests.map((url) => (
+            <li key={url}>
+              <a href={url} target="_blank" rel="noreferrer">
+                {url.replace(/^https:\/\/github\.com\//i, "").replace("/pull/", " #")}
+              </a>
+              <a href={`${url}/files`} target="_blank" rel="noreferrer">Files changed</a>
+              <a href={`${url}/checks`} target="_blank" rel="noreferrer">Checks</a>
+            </li>
+          ))}
+        </ul>
+      ) : <p className="muted">No pull request linked. Include its GitHub URL in the review update.</p>}
+      <h4>Review update</h4>
+      {report
+        ? <pre className="body">{report}</pre>
+        : <p className="muted">No verification notes were included in the review update.</p>}
+    </section>
+  );
+}
+
 export function CardModal({ card, lane, session, agents, nameOf, onDemoThread, onSpinOff, close, refresh }: {
   card: Card; lane: Lane; session: Session;
   agents: (Agent & { inChannel: boolean })[];
@@ -162,6 +192,7 @@ export function CardModal({ card, lane, session, agents, nameOf, onDemoThread, o
         </div>
       )}
       {card.body && <pre className="body">{card.body}</pre>}
+      {card.column === "in_review" && <ReviewPane card={card} />}
       {card.threadLink && !card.blocked && (
         <p>
           {onDemoThread

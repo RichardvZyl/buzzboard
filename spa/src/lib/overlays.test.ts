@@ -28,9 +28,12 @@ function ev(partial: Partial<SignedEvent> & { tags: string[][]; pubkey: string; 
   };
 }
 
+const laneDefaults = { name: "Test lane", description: "", channelId: null, githubUrl: null, syncAgent: null };
+
 describe("overlays", () => {
   it("detects archive lanes by slug or tags", () => {
     const base = {
+      ...laneDefaults,
       address: `30617:${OWNER}:x`,
       owner: OWNER,
       name: "X",
@@ -64,8 +67,8 @@ describe("overlays", () => {
   });
 
   it("ignores placement from outsiders and allows owners of both lanes", () => {
-    const nativeLane = { address: "30617:b:a", owner: OWNER, maintainers: [], repoId: "a", tags: [] } as Lane;
-    const targetLane = {
+    const nativeLane = { ...laneDefaults, address: "30617:b:a", owner: OWNER, maintainers: [], repoId: "a", tags: [] } as Lane;
+    const targetLane = { ...laneDefaults,
       address: "30617:b:needs-richard",
       owner: OWNER,
       maintainers: [],
@@ -94,6 +97,7 @@ describe("overlays", () => {
     const ownerX = "x".repeat(64);
     const ownerY = "y".repeat(64);
     const laneX = {
+      ...laneDefaults,
       address: `30617:${ownerX}:shared`,
       owner: ownerX,
       maintainers: [],
@@ -101,6 +105,7 @@ describe("overlays", () => {
       tags: [],
     } as Lane;
     const laneY = {
+      ...laneDefaults,
       address: `30617:${ownerY}:shared`,
       owner: ownerY,
       maintainers: [],
@@ -108,6 +113,7 @@ describe("overlays", () => {
       tags: [],
     } as Lane;
     const nativeLane = {
+      ...laneDefaults,
       address: `30617:${ownerX}:home`,
       owner: ownerX,
       maintainers: [],
@@ -132,6 +138,7 @@ describe("overlays", () => {
     const ownerX = "x".repeat(64);
     const ownerY = "y".repeat(64);
     const nativeLane = {
+      ...laneDefaults,
       address: `30617:${ownerX}:work`,
       owner: ownerX,
       maintainers: [],
@@ -139,6 +146,7 @@ describe("overlays", () => {
       tags: [],
     } as Lane;
     const otherSameSlug = {
+      ...laneDefaults,
       address: `30617:${ownerY}:work`,
       owner: ownerY,
       maintainers: [],
@@ -161,6 +169,7 @@ describe("overlays", () => {
     const ownerX = "x".repeat(64);
     const ownerY = "y".repeat(64);
     const laneX = {
+      ...laneDefaults,
       address: `30617:${ownerX}:dup`,
       owner: ownerX,
       maintainers: [],
@@ -168,6 +177,7 @@ describe("overlays", () => {
       tags: [],
     } as Lane;
     const laneY = {
+      ...laneDefaults,
       address: `30617:${ownerY}:dup`,
       owner: ownerY,
       maintainers: [ownerX],
@@ -175,6 +185,7 @@ describe("overlays", () => {
       tags: [],
     } as Lane;
     const nativeLane = {
+      ...laneDefaults,
       address: `30617:${ownerX}:src`,
       owner: ownerX,
       maintainers: [],
@@ -198,8 +209,8 @@ describe("overlays", () => {
   });
 
   it("maintainer of lane A cannot place into lane B", () => {
-    const laneA = { address: "30617:x:a", owner: "x", maintainers: [OWNER], repoId: "a", tags: [] } as Lane;
-    const laneB = { address: "30617:y:b", owner: "y", maintainers: [], repoId: "b", tags: [] } as Lane;
+    const laneA = { ...laneDefaults, address: "30617:x:a", owner: "x", maintainers: [OWNER], repoId: "a", tags: [] } as Lane;
+    const laneB = { ...laneDefaults, address: "30617:y:b", owner: "y", maintainers: [], repoId: "b", tags: [] } as Lane;
     const lanes = [laneA, laneB];
 
     const bad = ev({

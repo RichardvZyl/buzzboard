@@ -303,6 +303,18 @@ button.sm svg { font-size: 0.8rem; }
 }
 .new-lane:hover:not(:disabled) { color: var(--primary); border-color: var(--primary); background: var(--primary-soft); filter: none; }
 
+.review-pane {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.6rem;
+  margin-block: 1rem;
+  padding: 0.8rem 1rem;
+}
+.review-pane h3, .review-pane h4 { margin-block: 0 0.45rem; }
+.review-pane ul { list-style: none; padding: 0; }
+.review-pane li { display: flex; flex-wrap: wrap; column-gap: 0.9rem; overflow-wrap: anywhere; }
+.review-pane li + li { margin-top: 0.4rem; }
+
 /* --- modals --- */
 .overlay {
   position: fixed; inset: 0; background: hsl(232 23% 8% / 0.45);

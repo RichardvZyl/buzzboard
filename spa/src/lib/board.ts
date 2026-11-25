@@ -71,6 +71,7 @@ export interface Card {
   assignee: string | null;
   threadLink: string | null;
   githubIssueUrl: string | null;
+  reviewReport?: string;
   /** Per-card Notify agents subscriptions (from status `notify` tags). */
   notifications: NotifySubscription[];
 }
@@ -226,6 +227,7 @@ function deriveCard(
     assignee,
     threadLink: dispatchTag ? `buzz://message?channel=${dispatchTag[2]}&id=${dispatchTag[1]}` : null,
     githubIssueUrl,
+    reviewReport: column === "in_review" ? statusEvent?.content.trim() || undefined : undefined,
     notifications: parseNotifySubscriptions(referencing, issue.id),
   };
 }
