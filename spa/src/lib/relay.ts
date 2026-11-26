@@ -34,11 +34,18 @@ export class Relay {
   }
 
   async query(filters: Record<string, unknown>[]): Promise<SignedEvent[]> {
+    return (await this.queryWithCompleteness(filters)).events;
+  }
+
+  async queryWithCompleteness(filters: Record<string, unknown>[]) {
     const resp = await this.post("/query", filters);
     if (!resp.ok) {
       throw new Error(`query failed (${resp.status}): ${(await resp.text()).slice(0, 300)}`);
     }
-    return (await resp.json()) as SignedEvent[];
+    return {
+      events: (await resp.json()) as SignedEvent[],
+      complete: resp.headers.get("X-BuzzBoard-Query-Complete") === "true",
+    };
   }
 
   async command(operation: string, input: Record<string, unknown>): Promise<void> {
@@ -54,7 +61,7 @@ export class Relay {
       response = await this.post("/board/commands", { version: 1, requestId, operation, input });
       text = await response.text();
     } catch (cause) {
-      throw failure(String(cause), "Check relay connectivity and look up the request outcome before retrying.");
+      throw failure(String(cause), "Check relay connectivity. Run buzz-board.mjs request-status with the request ID and the same identity before retrying.");
     }
 
     let result: { ok?: boolean; code?: string; error?: string; resolution?: string } | undefined;
@@ -64,7 +71,7 @@ export class Relay {
     const code = typeof result?.code === "string" ? ` ${result.code}` : "";
     const message = typeof result?.error === "string" ? result.error : text.trim() || "No confirmation returned.";
     const resolution = typeof result?.resolution === "string" && result.resolution.trim()
-      ? result.resolution : "Check the ticket and lane prerequisites. If the write outcome is unclear, look up the request before retrying.";
+      ? result.resolution : "Check the ticket and lane prerequisites. If the outcome is unclear, run buzz-board.mjs request-status with the request ID before retrying.";
     throw failure(`HTTP ${response.status}${code}: ${message.slice(0, 1200)}`, resolution);
   }
 

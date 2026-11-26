@@ -124,7 +124,8 @@ async function post(signer, path, payload) {
 const query = (s, filters) => post(s, '/query', filters);
 const agentGuide = 'https://github.com/RichardvZyl/buzzboard/blob/04d569333f99fd84b702e210f844cff4dc44e0c3/AGENT-GUIDE.md';
 async function command(signer, operation, input) {
-  const requestId = randomUUID();
+  const requestId = args["request-id"] ?? randomUUID();
+  if (typeof requestId !== 'string' || !UUID_RE.test(requestId)) die('--request-id must be a UUID');
   const fail = (detail, resolution) => die(
     `${operation} failed [request ${requestId}]: ${detail} Resolution: ${resolution} Agent guide: ${agentGuide}`,
   );
@@ -132,14 +133,14 @@ async function command(signer, operation, input) {
   try {
     response = await post(signer, '/board/commands', {version: 1, requestId, operation, input});
   } catch (cause) {
-    fail(String(cause), 'Check relay connectivity and look up the request outcome before retrying.');
+    fail(String(cause), 'Check relay connectivity. Run request-status with the same identity and --lookup <request-id> before retrying.');
   }
   const {status, ok, text, data} = response;
   if (ok && data?.ok === true) return data;
   const code = typeof data?.code === 'string' ? ` ${data.code}` : '';
   const detail = typeof data?.error === 'string' ? data.error : text.trim() || 'No confirmation returned.';
   const resolution = typeof data?.resolution === 'string' && data.resolution.trim() ? data.resolution
-    : 'Check the ticket and lane prerequisites. If the write outcome is unclear, look up the request before retrying.';
+    : 'Check the ticket and lane prerequisites. If the outcome is unclear, run request-status --lookup <request-id> before retrying.';
   fail(`HTTP ${status}${code}: ${detail.slice(0, 1200)}`, resolution);
 }
 
@@ -282,6 +283,11 @@ async function readChannel(s, channel, {since, limit, kinds}) {
 
 // ---- commands ----
 switch (cmd) {
+  case 'request-status': {
+    if (typeof args.lookup !== 'string' || !UUID_RE.test(args.lookup)) die('--lookup <request-id> required');
+    out(await command(loadSigner(args.as), 'request.status', { requestId: args.lookup }));
+    break;
+  }
   case 'command': {
     if (typeof args.operation !== 'string' || !/^(ticket|lane|agent)\.[a-z][a-zA-Z]*$/.test(args.operation)) {
       die('--operation <ticket.operation|lane.operation|agent.operation> required');
@@ -451,5 +457,5 @@ switch (cmd) {
     out({bot: s.bot, pubkey: s.pubkey, lane: laneAddress(), open: open.length, doneOrClosed: mine.length - open.length, cards: open});
     break;
   }
-  default: die('usage: buzz-board.mjs <command|keygen|whoami|profile|lane-create|lane|lane-maintainers|post|ack|claim|interrupt|resolve|close|list|assigned|get|channel-read|import> ...');
+  default: die('usage: buzz-board.mjs <request-status|command|keygen|whoami|profile|lane-create|lane|lane-maintainers|post|ack|claim|interrupt|resolve|close|list|assigned|get|channel-read|import> ...');
 }

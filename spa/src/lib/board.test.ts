@@ -136,6 +136,22 @@ describe("dependency completion", () => {
       .toEqual(expected ? [prerequisite.id] : []);
   });
 
+  it("rechecks a visible prerequisite when a short bulk response is not confirmed complete", async () => {
+    const prerequisite = issueEvent();
+    const dependent = ev(1621, OWNER, 101, [["a", ADDR], ["depends-on", prerequisite.id]]);
+    const completion = statusEvent(1631, OWNER, 102, prerequisite.id);
+    const reopened = statusEvent(1630, OWNER, 103, prerequisite.id);
+    class TruncatingRelay extends StubRelay {
+      async queryWithCompleteness(filters: Record<string, unknown>[]) {
+        return { events: (await super.query(filters)).filter((event) => event.id !== reopened.id), complete: false };
+      }
+    }
+    const relay = new TruncatingRelay([laneEvent(), prerequisite, dependent, completion, reopened]);
+    const data = await fetchBoard(relay as never, OWNER);
+    const ticket = data.cards.get(ADDR)?.find((card) => card.id === dependent.id);
+    expect(ticket?.unmetDependencies).toEqual([prerequisite.id]);
+  });
+
   it("resolves a completed prerequisite outside the display window", async () => {
     const prerequisite = issueEvent();
     const dependent = ev(1621, OWNER, 101, [["a", ADDR], ["depends-on", prerequisite.id]]);

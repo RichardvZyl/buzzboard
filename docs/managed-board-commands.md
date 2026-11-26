@@ -75,3 +75,29 @@ Deploy the private build after verifying managed ingress and authentication. Nei
 Lane repositories provide the delete trigger. The receiver verifies the
 signature, GitHub PR/commit evidence, and ticket mapping before closing. Automatic archiving is inactive until the lane-side caller and receiver are deployed. Verify replay idempotency, exact default-branch reachability, and both merged and closed-unmerged PR cases before enabling it.
 See the [agent guide](../AGENT-GUIDE.md) for agent recovery from rejected writes.
+
+## Recover an unconfirmed write
+
+Use the same identity that submitted the original write:
+
+```powershell
+node tools/buzz-board.mjs request-status --as <slug> --lookup <original-request-id>
+node tools/buzz-board.mjs command --as <slug> --operation <original-operation> --input <original-input.json> --request-id <original-request-id>
+```
+
+The status command sends a read-only request.status operation with the
+original request ID in input.requestId and a new envelope request ID.
+The service must return the actor-scoped outcome as pending, succeeded,
+rejected, or unknown. Unknown is inconclusive. Replay the same operation
+and input using the original request ID only when the service confirms
+the idempotency contract. If lookup is unavailable, report the request
+ID to the operator and avoid starting a second write.
+
+## Relay query completeness
+
+A relay may send X-BuzzBoard-Query-Complete: true only when every event
+matching the issue-scoped filters was returned, with no truncation from
+the requested limit or a server-side cap. Expose the header to the SPA
+through CORS. Without that assertion, the board verifies prerequisites
+using ticket-scoped reads. The managed write service still checks
+dependencies against authoritative state before accepting a move.

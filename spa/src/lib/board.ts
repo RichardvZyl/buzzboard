@@ -384,9 +384,12 @@ export async function fetchBoard(relay: Relay, myPubkey: string): Promise<BoardD
     // statuses by repo AND by issue id — agent CLI statuses often lack `a`
     const byA = await relay.query([{ kinds: K.STATUS_KINDS, "#a": addresses, limit: 500 }]);
     const ids = issues.map((ev) => ev.id);
-    const byE = ids.length
-      ? await relay.query([{ kinds: K.STATUS_KINDS, "#e": ids, limit: 500 }])
-      : [];
+    const statusFilters = [{ kinds: K.STATUS_KINDS, "#e": ids, limit: 500 }];
+    const { events: byE, complete: historyComplete } = ids.length
+      ? relay.queryWithCompleteness
+        ? await relay.queryWithCompleteness(statusFilters)
+        : { events: await relay.query(statusFilters), complete: false }
+      : { events: [], complete: false };
     const statuses = [...new Map([...byA, ...byE].map((ev) => [ev.id, ev])).values()];
     const overlays = ids.length
       ? await relay.query([
@@ -436,9 +439,8 @@ export async function fetchBoard(relay: Relay, myPubkey: string): Promise<BoardD
     const allCards = [...cards.values()].flat();
     const dependencyIds = [...new Set(allCards.flatMap((card) => card.dependencies ?? []))];
     const completion = new Map<string, boolean>();
-    if (byE.length < 500) {
-      // The issue-scoped display query already brought back the complete
-      // status history for visible prerequisites unless it reached its cap.
+    if (historyComplete) {
+      // Reuse bulk history only when the relay explicitly attests completeness.
       const needed = new Set(dependencyIds);
       for (const card of allCards) {
         if (needed.has(card.id)) completion.set(card.id, card.column === "done" || Boolean(card.closedAfterDone));
