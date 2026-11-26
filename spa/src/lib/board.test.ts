@@ -152,6 +152,7 @@ describe("dependency completion", () => {
     expect(cards.find((card) => card.id === prerequisite.id)?.column).toBe("done");
     const ticket = cards.find((card) => card.id === dependent.id);
     expect(ticket?.unmetDependencies).toEqual([prerequisite.id]);
+    expect(ticket?.unverifiedDependencies).toEqual([]);
   });
 
   it("resolves a completed prerequisite outside the display window", async () => {
