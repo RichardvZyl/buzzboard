@@ -115,11 +115,34 @@ async function post(signer, path, payload) {
   const auth = signer.sign(27235, [['u', url], ['method', 'POST'], ['nonce', randomUUID()], ['payload', createHash('sha256').update(body).digest('hex')]]);
   const r = await fetch(url, {method: 'POST', headers: {Authorization: 'Nostr ' + Buffer.from(JSON.stringify(auth)).toString('base64'), 'Content-Type': 'application/json'}, body});
   const text = await r.text();
-  if (!r.ok) die(`${path} failed (${r.status}): ${text.slice(0, 300)}`);
-  try { return JSON.parse(text); } catch { return text; }
+  let data;
+  try { data = JSON.parse(text); } catch { data = text; }
+  if (path === '/board/commands') return {status: r.status, ok: r.ok, text, data};
+  if (!r.ok) die(`${path} failed (HTTP ${r.status}): ${text.slice(0, 1200)}`);
+  return data;
 }
 const query = (s, filters) => post(s, '/query', filters);
-const submit = async (s, ev) => { await post(s, '/events', ev); return ev; };
+const agentGuide = 'https://github.com/RichardvZyl/buzzboard/blob/04d569333f99fd84b702e210f844cff4dc44e0c3/AGENT-GUIDE.md';
+async function command(signer, operation, input) {
+  const requestId = args["request-id"] ?? randomUUID();
+  if (typeof requestId !== 'string' || !UUID_RE.test(requestId)) die('--request-id must be a UUID');
+  const fail = (detail, resolution) => die(
+    `${operation} failed [request ${requestId}]: ${detail} Resolution: ${resolution} Agent guide: ${agentGuide}`,
+  );
+  let response;
+  try {
+    response = await post(signer, '/board/commands', {version: 1, requestId, operation, input});
+  } catch (cause) {
+    fail(String(cause), 'Check relay connectivity. Run request-status with the same identity and --lookup <request-id> before retrying.');
+  }
+  const {status, ok, text, data} = response;
+  if (ok && data?.ok === true) return data;
+  const code = typeof data?.code === 'string' ? ` ${data.code}` : '';
+  const detail = typeof data?.error === 'string' ? data.error : text.trim() || 'No confirmation returned.';
+  const resolution = typeof data?.resolution === 'string' && data.resolution.trim() ? data.resolution
+    : 'Check the ticket and lane prerequisites. If the outcome is unclear, run request-status --lookup <request-id> before retrying.';
+  fail(`HTTP ${status}${code}: ${detail.slice(0, 1200)}`, resolution);
+}
 
 function laneAddress() {
   if (!cfg.lane?.owner || !cfg.lane?.d) die('config.lane.owner / config.lane.d not set (run lane-create first)');
@@ -140,12 +163,18 @@ const brief = (ev) => ({id: ev.id, kind: ev.kind, pubkey: ev.pubkey, npub: nip19
 
 // Column derivation: a simplified port of buzzboard's deriveCard (strict actors only), plus lane
 // maintainers from the lane event. NOTE: the buzzboard SPA's deriveCard does not read maintainers.
+const statusRecency = (a, b) =>
+  b.created_at - a.created_at || Number(a.kind === K.OPEN) - Number(b.kind === K.OPEN) || a.id.localeCompare(b.id);
+
 function derive(issue, statuses, maintainers = []) {
   const refs = statuses.filter((e) => e.tags.some((t) => t[0] === 'e' && t[1] === issue.id))
-    .sort((a, b) => b.created_at - a.created_at || Number(a.kind === K.OPEN) - Number(b.kind === K.OPEN) || (a.id < b.id ? -1 : 1));
-  const assignee = refs.map((e) => tag(e, 'assignee')).find((v) => v !== undefined) || null;
+    .sort(statusRecency);
+  const assignment = refs.find((event) => tag(event, 'assignee') !== undefined);
+  const assignee = assignment && tag(assignment, 'assignee') || null;
   const actors = new Set([issue.pubkey, cfg.lane.owner, assignee, ...maintainers].filter(Boolean));
-  const st = refs.find((e) => actors.has(e.pubkey)) || null;
+    const st = refs.find((event) => actors.has(event.pubkey)
+    && (!tag(event, 'interrupted-assignment')
+      || tag(event, 'interrupted-assignment') === (assignment && tag(assignment, 'assignment')))) || null;
   let column = 'backlog';
   if (st) {
     const by = assignee && st.pubkey === assignee; const labels = tagsOf(st, 't');
@@ -153,12 +182,12 @@ function derive(issue, statuses, maintainers = []) {
     else if (st.kind === K.OPEN && labels.includes('in-progress')) column = 'in_progress';
     else if (st.kind === K.OPEN && labels.includes('in-review')) column = 'in_review';
     else if (by && st.kind === K.RESOLVED) column = 'in_review';
-    else if (by && st.kind === K.DRAFT) column = 'in_review (blocked)';
+    else if (st.kind === K.DRAFT && (by || tag(st, 'interrupted-assignment'))) column = 'in_review (blocked)';
     else if (st.kind === K.RESOLVED) column = 'done';
     else if (st.kind === K.CLOSED) column = 'closed';
     else if (st.kind === K.DRAFT) column = 'triage';
   } else if (tagsOf(issue, 't').includes('triage')) column = 'triage';
-  return {id: issue.id, subject: tag(issue, 'subject'), author: issue.pubkey, assignee, column, labels: tagsOf(issue, 't'), fixture: issue.tags.find((t) => t[0] === 'fixture') || null, statusEvents: refs.length};
+  return {id: issue.id, subject: tag(issue, 'subject'), author: issue.pubkey, assignee, assignment: assignment && tag(assignment, 'assignment') || null, column, labels: tagsOf(issue, 't'), fixture: issue.tags.find((t) => t[0] === 'fixture') || null, statusEvents: refs.length};
 }
 async function fetchCards(s) {
   const a = laneAddress();
@@ -169,7 +198,6 @@ async function fetchCards(s) {
   const maintainers = maintainersOf(await fetchLane(s));
   return {issues, statuses: uniq, maintainers};
 }
-const statusTags = (issueId, extra = []) => [['e', issueId, '', 'root'], ['a', laneAddress()], ['p', cfg.lane.owner], ...extra];
 // Card id from --issue or the first positional argument. Full 64-char hex ids pass through; a shorter hex
 // prefix (min 8 chars, e.g. the 12-char ids in notes) is resolved against this lane's cards and must match
 // exactly one. Without this, a missing id reached the relay as null (400 'invalid type: null') and a short id
@@ -255,6 +283,21 @@ async function readChannel(s, channel, {since, limit, kinds}) {
 
 // ---- commands ----
 switch (cmd) {
+  case 'request-status': {
+    if (typeof args.lookup !== 'string' || !UUID_RE.test(args.lookup)) die('--lookup <request-id> required');
+    out(await command(loadSigner(args.as), 'request.status', { requestId: args.lookup }));
+    break;
+  }
+  case 'command': {
+    if (typeof args.operation !== 'string' || !/^(ticket|lane|agent)\.[a-z][a-zA-Z]*$/.test(args.operation)) {
+      die('--operation <ticket.operation|lane.operation|agent.operation> required');
+    }
+    if (typeof args.input !== 'string') die('--input <JSON file> required');
+    const input = JSON.parse(readFileSync(args.input, 'utf8').replace(/^\uFEFF/, ''));
+    if (!input || Array.isArray(input) || typeof input !== 'object') die('--input must contain a JSON object');
+    out(await command(loadSigner(args.as), args.operation, input));
+    break;
+  }
   case 'keygen': {
     const bot = args._[0]; const t = credTarget(bot);
     if (credRead(t) !== null) die(`key for ${bot} already exists (${t}); refusing to overwrite`);
@@ -267,19 +310,14 @@ switch (cmd) {
   }
   case 'whoami': { const s = loadSigner(args.as); out({bot: s.bot, pubkey: s.pubkey, npub: nip19.npubEncode(s.pubkey)}); break; }
   case 'profile': {
-    const s = loadSigner(args.as);
-    const ev = await submit(s, s.sign(K.PROFILE, [], JSON.stringify({name: args.name, display_name: args.name, about: args.about || 'Grok Bot agent on the A2A Buzz Board', bot: true})));
-    out(brief(ev)); break;
+    out(await command(loadSigner(args.as), 'agent.profile', { name: args.name, about: args.about }));
+    break;
   }
   case 'lane-create': {
-    const s = loadSigner(args.as);
-    const channelId = randomUUID(); const events = [];
-    events.push(await submit(s, s.sign(K.CREATE_CHANNEL, [['h', channelId], ['name', args.name], ['about', `buzzboard lane: ${args.name}`]])));
-    for (const pk of String(args.members || '').split(',').filter(Boolean)) events.push(await submit(s, s.sign(K.ADD_MEMBER, [['h', channelId], ['p', pk], ['role', 'bot']])));
-    const tags = [['d', args.slug], ['name', args.name], ['buzz-channel', channelId]];
-    if (args.about) tags.push(['description', args.about]);
-    events.push(await submit(s, s.sign(K.REPO, tags)));
-    out({lane: `${K.REPO}:${s.pubkey}:${args.slug}`, channelId, events: events.map(brief)}); break;
+    out(await command(loadSigner(args.as), 'lane.create', {
+      name: args.name, slug: args.slug, description: args.about, agentPubkeys: hexList(args.members),
+    }));
+    break;
   }
   case 'lane': {
     const s = loadSigner(args.as); const lane = await fetchLane(s);
@@ -308,37 +346,48 @@ switch (cmd) {
     const created_at = Math.max(Math.floor(Date.now() / 1000), lane.created_at + 1);
     const summary = {lane: laneAddress(), previousEvent: lane.id, maintainersBefore: before, maintainersAfter: after};
     if (args['dry-run']) { out({...summary, dryRun: true, event: {kind: K.REPO, pubkey: s.pubkey, created_at, tags, content: lane.content}}); break; }
-    const ev = s.sign(K.REPO, tags, lane.content);
-    if (ev.created_at <= lane.created_at) die('clock is behind the current lane event; refusing to publish an older replacement');
-    out({...summary, event: brief(await submit(s, ev))}); break;
+    out(await command(s, 'lane.maintainers', { lane: laneAddress(), add, remove })); break;
   }
   case 'post': {
     const s = loadSigner(args.as);
-    if (!args.title) die('--title required');
-    const tags = [['a', laneAddress()], ['p', cfg.lane.owner], ['subject', String(args.title)], ...list(args.label).map((l) => ['t', String(l)])];
-    out(brief(await submit(s, s.sign(K.ISSUE, tags, String(args.body || ''))))); break;
+    if (typeof args.title !== 'string' || !args.title.trim()) die('--title required');
+    out(await command(s, 'ticket.create', {
+      lane: laneAddress(), title: args.title.trim(), body: String(args.body || ''), labels: list(args.label),
+    }));
+    break;
+  }
+  case 'ack': {
+    const s = loadSigner(args.as);
+    if (typeof args.assignment !== 'string' || !UUID_RE.test(args.assignment)) die('--assignment <id> required');
+    out(await command(s, 'ticket.acknowledge', {
+      ticketId: await resolveIssueId(s), assignmentId: args.assignment,
+      provider: args.provider, model: args.model, effort: args.effort, capabilities: list(args.capability),
+    }));
+    break;
   }
   case 'claim': {
     const s = loadSigner(args.as);
-    const id = await resolveIssueId(s);
-    const ev = await submit(s, s.sign(K.OPEN, statusTags(id, [['t', 'in-progress'], ['assignee', s.pubkey]]), args.note || `claimed by ${s.bot}`));
-    enqueueNotify(s.bot, id, 'in_progress', args.note, ev.id);
-    enqueueNotify(s.bot, id, 'assignee', args.note, ev.id);
-    out(brief(ev)); break;
+    out(await command(s, 'ticket.claim', {ticketId: await resolveIssueId(s), note: args.note}));
+    break;
+  }
+  case 'interrupt': {
+    const s = loadSigner(args.as);
+    if (typeof args.assignment !== 'string' || !UUID_RE.test(args.assignment)) die('--assignment <id> required');
+    if (!['limit', 'failed', 'closed'].includes(args.reason)) die('--reason must be limit, failed, or closed');
+    out(await command(s, 'ticket.interrupt', {
+      ticketId: await resolveIssueId(s), assignmentId: args.assignment, reason: args.reason, note: args.note,
+    }));
+    break;
   }
   case 'resolve': {
-    const s = loadSigner(args.as); const id = await resolveIssueId(s);
-    const ev = await submit(s, s.sign(K.RESOLVED, statusTags(id), args.note || `resolved by ${s.bot}`));
-    // Assignee resolve → In Review; author/owner resolve → Done. Fan both; subscriptions filter.
-    enqueueNotify(s.bot, id, 'in_review', args.note, ev.id);
-    enqueueNotify(s.bot, id, 'done', args.note, ev.id);
-    out(brief(ev)); break;
+    const s = loadSigner(args.as);
+    out(await command(s, 'ticket.resolve', {ticketId: await resolveIssueId(s), note: args.note}));
+    break;
   }
   case 'close': {
-    const s = loadSigner(args.as); const id = await resolveIssueId(s);
-    const ev = await submit(s, s.sign(K.CLOSED, statusTags(id), args.note || `closed by ${s.bot}`));
-    enqueueNotify(s.bot, id, 'closed', args.note, ev.id);
-    out(brief(ev)); break;
+    const s = loadSigner(args.as);
+    out(await command(s, 'ticket.close', {ticketId: await resolveIssueId(s), note: args.note}));
+    break;
   }
   case 'list': {
     const s = loadSigner(args.as); const {issues, statuses, maintainers} = await fetchCards(s);
@@ -350,25 +399,39 @@ switch (cmd) {
     const [issue] = await query(s, [{ids: [id]}]);
     if (!issue) die(`issue ${id} not found`);
     const st = await query(s, [{kinds: STATUS, '#e': [id], limit: 500}]);
-    out({card: derive(issue, st, maintainersOf(await fetchLane(s))), issue: brief(issue), statuses: st.sort((a, b) => a.created_at - b.created_at).map(brief)}); break;
+    const assignments = st.filter((event) => tag(event, 'assignment')).sort(statusRecency).reverse();
+    const assignmentIds = assignments.map((event) => tag(event, 'assignment'));
+    const acknowledgements = assignmentIds.length
+      ? await query(s, [{kinds: [1111], '#E': [id], '#x': assignmentIds, limit: 500}])
+      : [];
+    const assignmentHistory = assignments.map((event) => {
+      const assignment = tag(event, 'assignment');
+      const assignee = tag(event, 'assignee') || null;
+      const acknowledged = acknowledgements.find((ack) => ack.pubkey === assignee
+        && tag(ack, 'x') === assignment && tag(ack, 'assignment-ack') === event.id);
+      return {
+        assignment, assignee, event: event.id, assignedAt: event.created_at, assignedBy: event.pubkey,
+        agent: (acknowledged && tag(acknowledged, 'agent')) || tag(event, 'agent') || null,
+        acknowledgedAt: acknowledged?.created_at ?? null,
+        provider: (acknowledged && tag(acknowledged, 'provider')) || null,
+        model: (acknowledged && tag(acknowledged, 'model')) || null,
+        effort: (acknowledged && tag(acknowledged, 'effort')) || null,
+        capabilities: acknowledged ? tagsOf(acknowledged, 'capability') : [],
+      };
+    });
+    out({card: derive(issue, st, maintainersOf(await fetchLane(s))), issue: brief(issue), assignmentHistory, statuses: st.sort((a, b) => a.created_at - b.created_at).map(brief)});
+    break;
   }
   case 'import': {
     const s = loadSigner(args.as);
-    const fx = JSON.parse(readFileSync(args.fixture, 'utf8').replace(/^\uFEFF/, ''));
-    const {issues} = await fetchCards(s);
-    const have = new Set(issues.map((i) => i.tags.find((t) => t[0] === 'fixture')).filter(Boolean).map((t) => `${t[1]}#${t[2]}`));
-    const results = [];
-    for (const row of fx.tasks) {
-      const key = `${fx.fixtureId}#${row.row}`;
-      if (have.has(key)) { results.push({row: row.row, skipped: 'already imported'}); continue; }
-      const tags = [['a', laneAddress()], ['p', cfg.lane.owner], ['subject', row.title], ['fixture', fx.fixtureId, String(row.row)], ['t', 'sprint-2026-10-22'], ...(row.labels || []).map((l) => ['t', l])];
-      const body = `Imported from fixture ${fx.fixtureId} (row ${row.row}).\nOwner: ${row.owner}\nStatus at import: ${row.status}\n\n${row.note}`;
-      const issue = await submit(s, s.sign(K.ISSUE, tags, body));
-      const map = {Done: K.RESOLVED, Dropped: K.CLOSED};
-      if (map[row.status]) await submit(s, s.sign(map[row.status], statusTags(issue.id), `status at import: ${row.status}`));
-      results.push({row: row.row, issue: issue.id, status: row.status});
+    const fixture = JSON.parse(readFileSync(args.fixture, 'utf8').replace(/^\uFEFF/, ''));
+    if (typeof fixture.fixtureId !== 'string' || !fixture.fixtureId.trim() || !Array.isArray(fixture.tasks)) {
+      die('fixture must contain fixtureId and tasks');
     }
-    out({fixtureId: fx.fixtureId, results}); break;
+    out(await command(s, 'ticket.import', {
+      lane: laneAddress(), fixtureId: fixture.fixtureId, tasks: fixture.tasks, dryRun: Boolean(args['dry-run']),
+    }));
+    break;
   }
   case 'channel-read': {
     const s = loadSigner(args.as);
@@ -394,5 +457,5 @@ switch (cmd) {
     out({bot: s.bot, pubkey: s.pubkey, lane: laneAddress(), open: open.length, doneOrClosed: mine.length - open.length, cards: open});
     break;
   }
-  default: die('usage: buzz-board.mjs <keygen|whoami|profile|lane-create|lane|lane-maintainers|post|claim|resolve|close|list|assigned|get|channel-read|import> ...');
+  default: die('usage: buzz-board.mjs <request-status|command|keygen|whoami|profile|lane-create|lane|lane-maintainers|post|ack|claim|interrupt|resolve|close|list|assigned|get|channel-read|import> ...');
 }

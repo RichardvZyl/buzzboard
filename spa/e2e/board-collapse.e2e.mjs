@@ -123,7 +123,7 @@ test("adding a card expands its board and leaves other collapsed boards alone", 
   assert.equal(await second.locator(".columns").isVisible(), false);
   await page.getByPlaceholder("Title", { exact: true }).fill("Collapse regression card");
   await page.locator(".modal").getByRole("button", { name: "Create", exact: true }).click();
-  await first.getByText("Collapse regression card", { exact: true }).waitFor();
+  await first.locator(".card-title").filter({ hasText: "Collapse regression card" }).waitFor();
   assert.equal(await page.locator(".modal").count(), 0);
 });
 
@@ -140,7 +140,7 @@ test("card details, drag/drop, and new-lane dialog still work after expanding", 
   await page.getByRole("button", { name: "Close", exact: true }).click();
   const triage = lane.locator(".column").filter({ has: page.locator(".column-head", { hasText: "Triage" }) });
   await card.dragTo(triage.locator(".cell"));
-  await triage.getByText("Offline queue for card drags", { exact: true }).waitFor();
+  await triage.locator(".card-title").filter({ hasText: "Offline queue for card drags" }).waitFor();
   await page.getByRole("button", { name: "+ New swimlane", exact: true }).click();
   await page.getByRole("button", { name: "Cancel", exact: true }).click();
   assert.equal(await page.locator(".lane").count(), 3);

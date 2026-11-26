@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { COLUMNS, COLUMN_LABELS, type Column } from "./lib/kinds";
 import {
   addBoardLinkToCanvas, assignCard, attachChannel, createCard, createLane, deleteLane,
-  fetchMyChannels, githubSlug, laneBoardUrl, moveCard, saveCardNotifications,
+  fetchMyChannels, fetchTicketComments, postTicketComment, githubSlug, laneBoardUrl, moveCard, saveCardDependencies, saveCardNotifications,
   type Agent, type Card, type Lane,
 } from "./lib/board";
 import {
@@ -12,10 +12,10 @@ import {
 import type { Session } from "./Board";
 import { BotIcon, GithubIcon, XIcon } from "./Icons";
 
-function Overlay({ children, close }: { children: React.ReactNode; close: () => void }) {
+function Overlay({ children, close, wide = false }: { children: React.ReactNode; close: () => void; wide?: boolean }) {
   return (
     <div className="overlay" onClick={(e) => { if (e.target === e.currentTarget) close(); }}>
-      <div className="modal">{children}</div>
+      <div className={wide ? "modal ticket-modal" : "modal"}>{children}</div>
     </div>
   );
 }
@@ -71,6 +71,13 @@ export function NewCardModal({ lane, session, syncAgentName, spinFrom, close, re
           parsed.push("triage");
         }
         run(async () => {
+          if (spinFrom && !session.demo) {
+            await session.relay.command("ticket.spinOff", {
+              ticketId: spinFrom.id, lane: lane.address, title: subject.trim(),
+              body, labels: parsed, closeOriginal,
+            });
+            return;
+          }
           await createCard(session.relay, session.signer, lane, subject.trim(), body,
             parsed, syncAgentName);
           if (spinFrom && closeOriginal) {
@@ -107,9 +114,66 @@ export function NewCardModal({ lane, session, syncAgentName, spinFrom, close, re
   );
 }
 
+function TicketComments({ card, session, nameOf }: Pick<Parameters<typeof CardModal>[0], "card" | "session" | "nameOf">) {
+  const [comments, setComments] = useState<Awaited<ReturnType<typeof fetchTicketComments>>>([]);
+  const [draft, setDraft] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    fetchTicketComments(session.relay, card.id).then(
+      (events) => { if (active) setComments(events); },
+      (reason: unknown) => { if (active) setError(String(reason)); },
+    );
+    return () => { active = false; };
+  }, [session.relay, card.id]);
+
+  async function post() {
+    setBusy(true);
+    setError("");
+    try {
+      const comment = await postTicketComment(session.relay, session.signer, card, draft);
+      if (comment) {
+        setComments((previous) => previous.some((event) => event.id === comment.id)
+          ? previous : [...previous, comment]);
+      } else {
+        setComments(await fetchTicketComments(session.relay, card.id));
+      }
+      setDraft("");
+    } catch (reason) {
+      setError(String(reason));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="ticket-comments" aria-labelledby="ticket-comments-heading">
+      <h3 id="ticket-comments-heading">Comments</h3>
+      <div className="ticket-scroll" tabIndex={0} role="region" aria-labelledby="ticket-comments-heading">
+        {comments.map((comment) => (
+          <article key={comment.id}>
+            <strong>{nameOf(comment.pubkey)}</strong>
+            <pre className="body">{comment.content}</pre>
+          </article>
+        ))}
+        {!comments.length && !error && <p className="muted">No comments yet.</p>}
+      </div>
+      <form onSubmit={(event) => { event.preventDefault(); void post(); }}>
+        <label>New comment
+          <textarea value={draft} onChange={(event) => setDraft(event.target.value)} disabled={busy} />
+        </label>
+        <button disabled={busy || !draft.trim()}>Post comment</button>
+      </form>
+      {error && <p role="alert" className="error">{error}</p>}
+    </section>
+  );
+}
+
 function ReviewPane({ card }: { card: Card }) {
   const report = card.reviewReport;
-  const pullRequestPattern = /https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/pull\/[1-9]\d*(?=$|[\s)\]>.,;!?#/])/gi;
+  const pullRequestPattern = /https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/pull\/[1-9]\d*(?=$|[\s)\]>.,;!?#/`*])/gi;
   const pullRequests = [...new Set([...(`${report ?? ""}\n${card.body}`).matchAll(pullRequestPattern)]
     .map(([url]) => url))];
 
@@ -146,6 +210,10 @@ export function CardModal({ card, lane, session, agents, nameOf, onDemoThread, o
   close: () => void; refresh: () => Promise<void>;
 }) {
   const [column, setColumn] = useState<Column>(card.column);
+  const [purposeTitle, setPurposeTitle] = useState(card.subject);
+  const [purposeBody, setPurposeBody] = useState(card.body);
+  const [dependencies, setDependencies] = useState((card.dependencies ?? []).join(", "));
+  const canEditDependencies = [card.author, lane.owner, ...(lane.maintainers ?? [])].includes(session.signer.pubkey);
   const [assignee, setAssignee] = useState(card.assignee ?? "");
   const [dispatch, setDispatch] = useState(true);
   const [notifyOpen, setNotifyOpen] = useState(card.notifications.length > 0);
@@ -171,7 +239,7 @@ export function CardModal({ card, lane, session, agents, nameOf, onDemoThread, o
   };
 
   return (
-    <Overlay close={close}>
+    <Overlay close={close} wide>
       <div className="modal-head">
         <h2>{card.subject}</h2>
         <button className="icon-btn" onClick={close} title="Close"><XIcon /></button>
@@ -191,14 +259,37 @@ export function CardModal({ card, lane, session, agents, nameOf, onDemoThread, o
           </a>, or move this card back to Backlog.
         </div>
       )}
-      {card.body && <pre className="body">{card.body}</pre>}
-      {card.column === "in_review" && <ReviewPane card={card} />}
+      <div className="ticket-panes">
+        <section className="ticket-details" aria-labelledby="ticket-description-heading">
+          <h3 id="ticket-description-heading">Description</h3>
+          <div className="ticket-scroll" tabIndex={0} role="region" aria-labelledby="ticket-description-heading">
+            {card.body ? <pre className="body">{card.body}</pre> : <p className="muted">No description.</p>}
+            {card.column === "in_review" && <ReviewPane card={card} />}
+          </div>
+        </section>
+        <TicketComments key={card.id} card={card} session={session} nameOf={nameOf} />
+      </div>
       {card.threadLink && !card.blocked && (
         <p>
           {onDemoThread
             ? <a href="#thread" onClick={(e) => { e.preventDefault(); onDemoThread(card); }}>💬 Open the agent thread</a>
             : <a href={card.threadLink}>💬 Open the agent thread in Buzz</a>}
         </p>
+      )}
+      {!session.demo && (
+        <details>
+          <summary>Edit ticket title and context</summary>
+          <form onSubmit={(event) => {
+            event.preventDefault();
+            void run(() => session.relay.command("ticket.setPurpose", {
+              ticketId: card.id, title: purposeTitle.trim(), body: purposeBody,
+            }));
+          }}>
+            <label>Title <input required value={purposeTitle} onChange={(event) => setPurposeTitle(event.target.value)} /></label>
+            <label>Context <textarea value={purposeBody} onChange={(event) => setPurposeBody(event.target.value)} /></label>
+            <button disabled={busy || !purposeTitle.trim()}>Save ticket</button>
+          </form>
+        </details>
       )}
       {card.githubIssueUrl && (
         <p className="inline-link"><GithubIcon />
@@ -213,13 +304,26 @@ export function CardModal({ card, lane, session, agents, nameOf, onDemoThread, o
             {COLUMNS.map((c) => <option key={c} value={c}>{COLUMN_LABELS[c]}</option>)}
           </select>
         </label>
-        <button disabled={busy || column === card.column}
+        <button disabled={busy || column === card.column || Boolean(card.unmetDependencies?.length)}
                 onClick={() => run(() => moveCard(session.relay, session.signer, lane, card,
                   column, { before: null, after: null }))}>
           Move
         </button>
       </div>
 
+      {Boolean(card.unmetDependencies?.length) && <p className="notice">{card.unverifiedDependencies?.length ? "Blocked because dependency completion could not be verified." : "Blocked by unfinished ticket dependencies."}</p>}
+      {(canEditDependencies || Boolean(card.dependencies?.length)) && (
+        <div className="row">
+          <label>Depends on
+            <input value={dependencies} onChange={(event) => setDependencies(event.target.value)}
+              placeholder="Ticket IDs, comma-separated" disabled={!canEditDependencies || busy} />
+          </label>
+          {canEditDependencies && <button type="button" disabled={busy}
+            onClick={() => run(() => saveCardDependencies(session.relay, session.signer, lane, card, dependencies))}>
+            Save dependencies
+          </button>}
+        </div>
+      )}
       {!card.blocked && (
         <p className="muted">
           Need a sharper version of this ticket?{" "}
@@ -249,12 +353,12 @@ export function CardModal({ card, lane, session, agents, nameOf, onDemoThread, o
           Assign
         </button>
       </div>
-      <label className="check">
+      {session.demo && <label className="check">
         <input type="checkbox" checked={dispatch} disabled={!canDispatch}
                onChange={(e) => setDispatch(e.target.checked)} />
         Post assignment message in the lane channel (wakes the agent)
         {!canDispatch && <span className="error-inline"> — lane has no channel</span>}
-      </label>
+      </label>}
 
       <fieldset className="notify-box">
         <legend>
@@ -345,8 +449,8 @@ export function NewLaneModal({ session, agents, close, refresh }: {
     <Overlay close={close}>
       <h2>New swimlane</h2>
       <p className="muted">
-        Creates a channel for the lane's discussion and agent dispatch. Linking a
-        GitHub repo lets a lane agent keep GitHub issues in sync.
+        {session.demo ? "Creates a simulated lane and discussion channel."
+          : "Creates the lane, a dedicated private GitHub repository, and a discussion channel."}
       </p>
       <form onSubmit={(e) => {
         e.preventDefault();
@@ -361,8 +465,8 @@ export function NewLaneModal({ session, agents, close, refresh }: {
                onChange={(e) => setName(e.target.value)} />
         <input placeholder="Description (optional)" value={description}
                onChange={(e) => setDescription(e.target.value)} />
-        <input placeholder="GitHub repo URL (optional)" value={githubUrl}
-               onChange={(e) => setGithubUrl(e.target.value)} />
+        {session.demo && <input placeholder="GitHub repo URL (optional)" value={githubUrl}
+               onChange={(e) => setGithubUrl(e.target.value)} />}
         {githubLinked && (
           <fieldset>
             <legend>GitHub sync</legend>

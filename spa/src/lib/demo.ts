@@ -128,7 +128,7 @@ function buildDemoEvents(now: number): { events: SignedEvent[]; simIssueId: stri
   status(synced, "payments", K.KIND_STATUS_OPEN, now - 7100, null,
     [["assignee", honey.pubkey], ["rank", "x"], dispatch(CH_PAYMENTS, honey, synced, now - 7150)]);
   status(synced, "payments", K.KIND_STATUS_RESOLVED, now - 4000, honey, [],
-    "Done — nightly job in place. GitHub: https://github.com/acme/payments/issues/42");
+    "Tests passed for duplicate payouts and delayed reports. PR: https://github.com/acme/payments/pull/42. GitHub: https://github.com/acme/payments/issues/42");
 
   const doneCard = card("payments", "Migrate billing webhooks to v2", now - 8600, []);
   status(doneCard, "payments", K.KIND_STATUS_RESOLVED, now - 6000, null);

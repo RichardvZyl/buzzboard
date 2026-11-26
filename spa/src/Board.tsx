@@ -23,6 +23,15 @@ export interface Session {
   demo?: boolean;
 }
 
+const STALE_AFTER_SECONDS = 12 * 60 * 60;
+
+function formatElapsed(seconds: number) {
+  const minutes = Math.floor(Math.max(0, seconds) / 60);
+  const hours = Math.floor(minutes / 60);
+  if (hours === 0) return `${minutes}m`;
+  return `${hours}h ${minutes % 60}m`;
+}
+
 type Modal =
   | { kind: "none" }
   | { kind: "card"; card: Card; lane: Lane }
@@ -42,10 +51,22 @@ export function Board({ data, session, refresh, busyRef, optimisticMove }: {
   const [modal, setModalState] = useState<Modal>({ kind: "none" });
   const [dropTarget, setDropTarget] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  const now = Math.floor(Date.now() / 1000);
   // Presentation only: keep stable lane identities across filtering, refreshes, and reloads.
   const [collapsedLanes, setCollapsedLanes] = useState<Set<string>>(() => readCollapsedLanes());
   const boardId = useId();
   const [showArchive, setShowArchive] = useState(false);
+  const [closedView, setClosedView] = useState(() => window.location.hash === "#closed");
+  useEffect(() => {
+    const syncView = () => setClosedView(window.location.hash === "#closed");
+    window.addEventListener("hashchange", syncView);
+    return () => window.removeEventListener("hashchange", syncView);
+  }, []);
+  const closedTickets = closedView ? data.lanes.flatMap((lane) =>
+    (data.cards.get(lane.address) ?? []).filter((card) => card.column === "closed")
+      .map((card) => ({ card, lane })),
+  ).sort((a, b) => (b.card.columnChangedAt ?? b.card.updatedAt) - (a.card.columnChangedAt ?? a.card.updatedAt)
+    || a.card.id.localeCompare(b.card.id)) : [];
   const searchRef = useRef<HTMLInputElement>(null);
   const dragging = useRef<{ cardId: string; lane: string } | null>(null);
 
@@ -126,7 +147,7 @@ export function Board({ data, session, refresh, busyRef, optimisticMove }: {
     if (!drag || drag.lane !== lane.address) { busyRef.current = false; return; }
     const all = data.cards.get(lane.address) ?? [];
     const card = all.find((c) => c.id === drag.cardId);
-    if (!card) { busyRef.current = false; return; }
+    if (!card || card.unmetDependencies?.length) { busyRef.current = false; return; }
 
     // insertion index from pointer position among the target cell's cards
     const cell = e.currentTarget as HTMLElement;
@@ -137,14 +158,14 @@ export function Board({ data, session, refresh, busyRef, optimisticMove }: {
       const rect = others[i].getBoundingClientRect();
       if (e.clientY < rect.top + rect.height / 2) { index = i; break; }
     }
-    const target = all.filter((c) => c.column === column && c.id !== card.id);
+    const target = all.filter((c) => c.column === column && !c.unmetDependencies?.length && c.id !== card.id);
     // nearest *ranked* neighbors — unranked cards can't anchor a rank
     const before = target.slice(0, index).reverse().find((c) => c.rank !== null) ?? null;
     const after = target.slice(index).find((c) => c.rank !== null) ?? null;
 
     // move locally right now; publish + reconcile in the background
     const rank = rankBetween(before?.rank ?? "", after?.rank ?? "");
-    optimisticMove(lane.address, card.id, column, rank);
+    if (session.demo) optimisticMove(lane.address, card.id, column, rank);
     busyRef.current = true; // hold off polling until the relay has the event
     moveCard(session.relay, session.signer, lane, card, column, { before, after })
       .then(() => refresh())
@@ -154,6 +175,31 @@ export function Board({ data, session, refresh, busyRef, optimisticMove }: {
 
   return (
     <main className="board">
+      <nav className="board-toolbar" aria-label="Board views">
+        <a className="ghost-link" href="#swimlanes" aria-current={!closedView ? "page" : undefined}>Swimlanes</a>
+        <a className="ghost-link" href="#closed" aria-current={closedView ? "page" : undefined}>Closed tickets</a>
+      </nav>
+      {closedView && (
+        <section className="lane closed-history">
+          <h2>Closed tickets</h2>
+          {closedTickets.length ? (
+            <ol>
+              {closedTickets.map(({ card, lane }) => (
+                <li key={card.id}>
+                  <button type="button" className="ghost" onClick={() => setModal({ kind: "card", card, lane })}>
+                    {card.subject}
+                  </button>
+                  <span className="muted">{lane.name}</span>
+                  <time dateTime={new Date((card.columnChangedAt ?? card.updatedAt) * 1000).toISOString()}>
+                    {new Date((card.columnChangedAt ?? card.updatedAt) * 1000).toLocaleString()}
+                  </time>
+                </li>
+              ))}
+            </ol>
+          ) : <p className="muted">No closed tickets.</p>}
+        </section>
+      )}
+      <div hidden={closedView}>
       {data.lanes.length > 0 && (
         <div className="board-toolbar">
           <div className="search">
@@ -242,19 +288,22 @@ export function Board({ data, session, refresh, busyRef, optimisticMove }: {
           </div>
           <div className="columns" id={`${boardId}-${lane.address}`}
                hidden={collapsedLanes.has(lane.address)}>
-            {COLUMNS.map((col) => {
-              const cell = (data.cards.get(lane.address) ?? []).filter((c) => c.column === col);
+            {[...COLUMNS.filter((col) => col !== "closed"), "blocked" as const].map((col) => {
+              const cell = (data.cards.get(lane.address) ?? []).filter((card) => {
+                if (card.column === "closed") return false;
+                return card.unmetDependencies?.length ? col === "blocked" : card.column === col;
+              });
               const cellKey = `${lane.address}:${col}`;
               return (
                 <div key={col} className="column">
                   <div className="column-head">
-                    <span><i className={`dot dot-${col}`} />{COLUMN_LABELS[col]}</span>
+                    <span><i className={`dot dot-${col}`} />{col === "blocked" ? "Blocked" : COLUMN_LABELS[col]}</span>
                     <span className="count">{cell.length}</span>
                   </div>
                   <div
                     className={`cell${dropTarget === cellKey ? " drop-over" : ""}`}
                     onDragOver={(e) => {
-                      if (dragging.current?.lane === lane.address) {
+                      if (col !== "blocked" && dragging.current?.lane === lane.address) {
                         e.preventDefault();
                         if (dropTarget !== cellKey) setDropTarget(cellKey);
                       }
@@ -264,14 +313,14 @@ export function Board({ data, session, refresh, busyRef, optimisticMove }: {
                         setDropTarget(null);
                       }
                     }}
-                    onDrop={(e) => onDrop(lane, col, e)}
+                    onDrop={col === "blocked" ? undefined : (e) => onDrop(lane, col, e)}
                   >
-                    {cell.map((card) => (
+                    {cell.map((card, index) => (
                       <div
                         key={card.id}
                         data-card={card.id}
                         className="card"
-                        draggable
+                        draggable={!card.unmetDependencies?.length}
                         onDragStart={() => {
                           busyRef.current = true;
                           dragging.current = { cardId: card.id, lane: lane.address };
@@ -283,9 +332,22 @@ export function Board({ data, session, refresh, busyRef, optimisticMove }: {
                         }}
                         onClick={() => setModal({ kind: "card", card, lane })}
                       >
-                        <div className="card-title">{card.subject}</div>
+                        <div className="card-title">
+                          <span className="muted" title="Position in this column">{index + 1}. </span>
+                          {card.subject}
+                        </div>
                         <div className="card-meta">
-                          {card.blocked && (
+                          {card.leftBacklogAt !== undefined && card.column !== "done" && card.column !== "closed" && (
+                            <span className="badge" title="Time since leaving Backlog">
+                              {formatElapsed(now - card.leftBacklogAt)} out of backlog
+                            </span>
+                          )}
+                          {!card.blocked && !card.unmetDependencies?.length && lane.repoId.toLowerCase() !== "blocked"
+                            && card.column !== "done" && card.column !== "closed"
+                            && now - (card.columnChangedAt ?? card.createdAt) >= STALE_AFTER_SECONDS && (
+                            <span className="badge stale" title="In this column for at least 12 hours">Stale</span>
+                          )}
+                          {(card.blocked || Boolean(card.unmetDependencies?.length)) && (
                             <span className="badge blocked"><AlertIcon />Blocked</span>
                           )}
                           {card.labels.map((l) => <span key={l} className="badge">{l}</span>)}
@@ -326,6 +388,8 @@ export function Board({ data, session, refresh, busyRef, optimisticMove }: {
       <button className="new-lane" onClick={() => setModal({ kind: "new-lane" })}>
         + New swimlane
       </button>
+
+      </div>
 
       {modal.kind === "card" && (
         <CardModal card={modal.card} lane={modal.lane} session={session}

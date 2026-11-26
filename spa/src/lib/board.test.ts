@@ -85,6 +85,95 @@ async function boardWith(events: SignedEvent[], me = OWNER) {
   return { relay, data, cards: data.cards.get(ADDR) ?? [] };
 }
 
+describe("review report history", () => {
+  it("keeps signed notes through reordering, notification changes, and reassignment", async () => {
+    const issue = issueEvent();
+    const content = "Tests passed. https://github.com/acme/widgets/pull/42";
+    const events = [
+      laneEvent(), issue,
+      statusEvent(1630, OWNER, 101, issue.id, { tags: [["assignee", AGENT]] }),
+      statusEvent(1631, AGENT, 102, issue.id, { content }),
+    ];
+    const edits = [
+      statusEvent(1630, OWNER, 103, issue.id, { tags: [["t", "in-review"], ["rank", "a"]] }),
+      statusEvent(1630, OWNER, 104, issue.id, { tags: [["t", "in-review"], ["notify", "codex", "comment"]] }),
+      statusEvent(1630, OWNER, 105, issue.id, { tags: [["t", "in-review"], ["assignee", MAINT]] }),
+      statusEvent(1630, STRANGER, 106, issue.id, { tags: [["t", "in-review"]], content: "Unauthorized report" }),
+    ];
+    for (const edit of edits) {
+      events.push(edit);
+      const { cards } = await boardWith(events);
+      expect(cards[0]).toMatchObject({ column: "in_review", reviewReport: content });
+    }
+  });
+
+  it("clears an earlier report after leaving and reentering review", async () => {
+    const issue = issueEvent();
+    const { cards } = await boardWith([
+      laneEvent(), issue,
+      statusEvent(1630, OWNER, 101, issue.id, { tags: [["assignee", AGENT]] }),
+      statusEvent(1631, AGENT, 102, issue.id, { content: "Earlier review notes" }),
+      statusEvent(1630, OWNER, 103, issue.id, { tags: [["t", "in-progress"]] }),
+      statusEvent(1630, OWNER, 104, issue.id, { tags: [["t", "in-review"]] }),
+    ]);
+    expect(cards[0].column).toBe("in_review");
+    expect(cards[0].reviewReport).toBeUndefined();
+  });
+});
+
+describe("dependency completion", () => {
+  it.each([
+    { reopened: false, expected: false },
+    { reopened: true, expected: true },
+  ])("only accepts closure directly from Done (reopened: $reopened)", async ({ reopened, expected }) => {
+    const prerequisite = issueEvent();
+    const dependent = ev(1621, OWNER, 101, [["a", ADDR], ["depends-on", prerequisite.id]]);
+    const events = [laneEvent(), prerequisite, dependent, statusEvent(1631, OWNER, 102, prerequisite.id)];
+    if (reopened) events.push(statusEvent(1630, OWNER, 103, prerequisite.id));
+    events.push(statusEvent(1632, OWNER, 104, prerequisite.id), statusEvent(1632, OWNER, 105, prerequisite.id));
+    const { cards } = await boardWith(events);
+    expect(cards.find((card) => card.id === dependent.id)?.unmetDependencies)
+      .toEqual(expected ? [prerequisite.id] : []);
+  });
+
+  it("rechecks a visible prerequisite when a short bulk response is not confirmed complete", async () => {
+    const prerequisite = issueEvent();
+    const dependent = ev(1621, OWNER, 101, [["a", ADDR], ["depends-on", prerequisite.id]]);
+    const completion = statusEvent(1631, OWNER, 102, prerequisite.id);
+    const reopened = statusEvent(1630, OWNER, 103, prerequisite.id, { noA: true });
+    class TruncatingRelay extends StubRelay {
+      async queryWithCompleteness(filters: Record<string, unknown>[]) {
+        return { events: (await super.query(filters)).filter((event) => event.id !== reopened.id), complete: false };
+      }
+    }
+    const relay = new TruncatingRelay([laneEvent(), prerequisite, dependent, completion, reopened]);
+    const data = await fetchBoard(relay as never, OWNER);
+    const cards = data.cards.get(ADDR) ?? [];
+    expect(cards.find((card) => card.id === prerequisite.id)?.column).toBe("done");
+    const ticket = cards.find((card) => card.id === dependent.id);
+    expect(ticket?.unmetDependencies).toEqual([prerequisite.id]);
+    expect(ticket?.unverifiedDependencies).toEqual([]);
+  });
+
+  it("resolves a completed prerequisite outside the display window", async () => {
+    const prerequisite = issueEvent();
+    const dependent = ev(1621, OWNER, 101, [["a", ADDR], ["depends-on", prerequisite.id]]);
+    const completion = statusEvent(1631, OWNER, 102, prerequisite.id);
+    class WindowedRelay extends StubRelay {
+      override async query(filters: Record<string, unknown>[]) {
+        const matches = await super.query(filters);
+        return filters.some((filter) => Array.isArray(filter.ids) || filter["#e"]?.toString() === prerequisite.id)
+          ? matches : matches.filter((event) => event.id !== prerequisite.id && event.id !== completion.id);
+      }
+    }
+    const relay = new WindowedRelay([laneEvent(), prerequisite, dependent, completion]);
+    const data = await fetchBoard(relay as never, OWNER);
+    const tickets = data.cards.get(ADDR) ?? [];
+    expect(tickets.map((card) => card.id)).toEqual([dependent.id]);
+    expect(tickets[0].unmetDependencies).toEqual([]);
+  });
+});
+
 // --- lane parsing ---
 
 describe("lane parsing", () => {
@@ -398,16 +487,20 @@ describe("actions", () => {
     expect(tagsOf(e, "rank")).toHaveLength(1);
   });
 
-  it("assignCard publishes dispatch mention then status with assignee + dispatch tags", async () => {
+  it("assignCard records the assignment before waking the agent", async () => {
     const relay = new StubRelay();
     await assignCard(relay as never, signer, lane, card, AGENT, "codey", true, "paolo");
-    expect(relay.submitted.map((e) => e.kind)).toEqual([9, 1630]);
-    const [msg, status] = relay.submitted;
+    expect(relay.submitted.map((e) => e.kind)).toEqual([1630, 9]);
+    const [status, msg] = relay.submitted;
     expect(msg.tags).toContainEqual(["h", CHANNEL]);
     expect(msg.tags).toContainEqual(["p", AGENT]);
     expect(msg.content).toContain("@codey");
     expect(msg.content).toContain(card.id);
     expect(status.tags).toContainEqual(["assignee", AGENT]);
+    expect(status.tags).toContainEqual(["agent", "codey"]);
+    const assignment = status.tags.find(([key]) => key === "assignment")?.[1];
+    expect(assignment).toMatch(/^[0-9a-f-]{36}$/);
+    expect(msg.content).toContain(`--assignment ${assignment}`);
     expect(status.tags).toContainEqual(["dispatch", msg.id, CHANNEL]);
   });
 
