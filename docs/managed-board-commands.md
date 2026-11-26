@@ -19,7 +19,7 @@ Authenticate the request with NIP-98 signed over the exact URL and body.
 Derive the actor from the signature. Accept a command only after authorization
 and the operation's durable state change or explicitly reported pending state.
 Return JSON `{"ok":true}`, with optional result data. Return a non-2xx status
-and a short explanation for rejection. Scope idempotency to authenticated
+with a descriptive error for rejection. Return a stable code and a concrete recovery step when available, using the fields `ok: false`, `code`, `error`, and `resolution`. Scope idempotency to authenticated
 actor and request ID. Reusing an ID with a different payload must fail.
 Never pass caller-supplied actor or GitHub visibility through as authority.
 
@@ -67,13 +67,11 @@ public-key arrays. Maintainership dry runs remain local reads.
 
 ticket.import accepts lane, fixtureId, tasks and dryRun. The service must
 deduplicate rows atomically by lane, fixtureId and row identifier, including
-across retries and concurrently running imports. Dry runs return a plan
+across retries and concurrently running imports. Seed and reconcile that index from existing issue tags of the form `["fixture", fixtureId, String(row)]`. A replay of the legacy 11-row fixture must report 11 skips. Dry runs return a plan
 without publishing. Apply the same repository and issue gates as creation.
 
-Set the repository variable BUZZBOARD_MANAGED_INGRESS_READY to true only
-after verifying the deployed command ingress and authentication. Until then
-the Pages workflow leaves the existing deployment in place.
+Deploy the private build after verifying managed ingress and authentication. Neither repository publishes through GitHub Pages.
 
 Lane repositories provide the delete trigger. The receiver verifies the
-signature, GitHub PR/commit evidence, and ticket mapping before closing.
+signature, GitHub PR/commit evidence, and ticket mapping before closing. Automatic archiving is inactive until the lane-side caller and receiver are deployed. Verify replay idempotency, exact default-branch reachability, and both merged and closed-unmerged PR cases before enabling it.
 See the [agent guide](../AGENT-GUIDE.md) for agent recovery from rejected writes.

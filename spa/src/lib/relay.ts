@@ -42,12 +42,30 @@ export class Relay {
   }
 
   async command(operation: string, input: Record<string, unknown>): Promise<void> {
-    const response = await this.post("/board/commands", {
-      version: 1, requestId: crypto.randomUUID(), operation, input,
-    });
-    if (!response.ok) throw new Error(`Board command failed (${response.status}): ${(await response.text()).slice(0, 300)} Agent guide: https://github.com/RichardvZyl/buzzboard/blob/codex/public-work/AGENT-GUIDE.md`);
-    const result = await response.json();
-    if (result?.ok !== true) throw new Error(result?.error || "Board command was not confirmed.");
+    const requestId = crypto.randomUUID();
+    const guide = "https://github.com/RichardvZyl/buzzboard/blob/04d569333f99fd84b702e210f844cff4dc44e0c3/AGENT-GUIDE.md";
+    const failure = (detail: string, resolution: string) => new Error(
+      `${operation} failed [request ${requestId}]: ${detail} Resolution: ${resolution} Agent guide: ${guide}`,
+    );
+
+    let response: Response;
+    let text: string;
+    try {
+      response = await this.post("/board/commands", { version: 1, requestId, operation, input });
+      text = await response.text();
+    } catch (cause) {
+      throw failure(String(cause), "Check relay connectivity and look up the request outcome before retrying.");
+    }
+
+    let result: { ok?: boolean; code?: string; error?: string; resolution?: string } | undefined;
+    try { result = JSON.parse(text); } catch { /* The HTTP status still identifies the failure. */ }
+    if (response.ok && result?.ok === true) return;
+
+    const code = typeof result?.code === "string" ? ` ${result.code}` : "";
+    const message = typeof result?.error === "string" ? result.error : text.trim() || "No confirmation returned.";
+    const resolution = typeof result?.resolution === "string" && result.resolution.trim()
+      ? result.resolution : "Check the ticket and lane prerequisites. If the write outcome is unclear, look up the request before retrying.";
+    throw failure(`HTTP ${response.status}${code}: ${message.slice(0, 1200)}`, resolution);
   }
 
   async submit(event: SignedEvent): Promise<unknown> {

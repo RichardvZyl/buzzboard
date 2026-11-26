@@ -436,10 +436,19 @@ export async function fetchBoard(relay: Relay, myPubkey: string): Promise<BoardD
     const allCards = [...cards.values()].flat();
     const dependencyIds = [...new Set(allCards.flatMap((card) => card.dependencies ?? []))];
     const completion = new Map<string, boolean>();
+    if (byE.length < 500) {
+      // The issue-scoped display query already brought back the complete
+      // status history for visible prerequisites unless it reached its cap.
+      const needed = new Set(dependencyIds);
+      for (const card of allCards) {
+        if (needed.has(card.id)) completion.set(card.id, card.column === "done" || Boolean(card.closedAfterDone));
+      }
+    }
+    const unresolved = dependencyIds.filter((id) => !completion.has(id));
     // Read each dependency directly so unrelated cards and statuses cannot
     // crowd it out of the board's display queries.
-    for (let i = 0; i < dependencyIds.length; i += 8) {
-      await Promise.all(dependencyIds.slice(i, i + 8).map(async (id) => {
+    for (let i = 0; i < unresolved.length; i += 8) {
+      await Promise.all(unresolved.slice(i, i + 8).map(async (id) => {
         try {
           const [issue] = await relay.query([{ kinds: [K.KIND_GIT_ISSUE], ids: [id], limit: 1 }]);
           const dependencyLane = issue && laneByAddress.get(tagValue(issue, "a") ?? "");

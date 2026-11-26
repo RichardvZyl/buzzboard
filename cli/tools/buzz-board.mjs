@@ -115,17 +115,32 @@ async function post(signer, path, payload) {
   const auth = signer.sign(27235, [['u', url], ['method', 'POST'], ['nonce', randomUUID()], ['payload', createHash('sha256').update(body).digest('hex')]]);
   const r = await fetch(url, {method: 'POST', headers: {Authorization: 'Nostr ' + Buffer.from(JSON.stringify(auth)).toString('base64'), 'Content-Type': 'application/json'}, body});
   const text = await r.text();
-  if (!r.ok) {
-    const guide = path === '/board/commands' ? ' Agent guide: https://github.com/RichardvZyl/buzzboard/blob/codex/public-work/AGENT-GUIDE.md' : '';
-    die(`${path} failed (${r.status}): ${text.slice(0, 300)}${guide}`);
-  }
-  try { return JSON.parse(text); } catch { return text; }
+  let data;
+  try { data = JSON.parse(text); } catch { data = text; }
+  if (path === '/board/commands') return {status: r.status, ok: r.ok, text, data};
+  if (!r.ok) die(`${path} failed (HTTP ${r.status}): ${text.slice(0, 1200)}`);
+  return data;
 }
 const query = (s, filters) => post(s, '/query', filters);
+const agentGuide = 'https://github.com/RichardvZyl/buzzboard/blob/04d569333f99fd84b702e210f844cff4dc44e0c3/AGENT-GUIDE.md';
 async function command(signer, operation, input) {
-  const result = await post(signer, '/board/commands', {version: 1, requestId: randomUUID(), operation, input});
-  if (result?.ok !== true) die(result?.error || 'board command was not confirmed');
-  return result;
+  const requestId = randomUUID();
+  const fail = (detail, resolution) => die(
+    `${operation} failed [request ${requestId}]: ${detail} Resolution: ${resolution} Agent guide: ${agentGuide}`,
+  );
+  let response;
+  try {
+    response = await post(signer, '/board/commands', {version: 1, requestId, operation, input});
+  } catch (cause) {
+    fail(String(cause), 'Check relay connectivity and look up the request outcome before retrying.');
+  }
+  const {status, ok, text, data} = response;
+  if (ok && data?.ok === true) return data;
+  const code = typeof data?.code === 'string' ? ` ${data.code}` : '';
+  const detail = typeof data?.error === 'string' ? data.error : text.trim() || 'No confirmation returned.';
+  const resolution = typeof data?.resolution === 'string' && data.resolution.trim() ? data.resolution
+    : 'Check the ticket and lane prerequisites. If the write outcome is unclear, look up the request before retrying.';
+  fail(`HTTP ${status}${code}: ${detail.slice(0, 1200)}`, resolution);
 }
 
 function laneAddress() {

@@ -24,3 +24,17 @@ describe("managed board writes", () => {
     expect(fetch).toHaveBeenCalledTimes(1);
   });
 });
+
+it("includes the server's detail and recovery action for a rejected legacy write", async () => {
+  const sign = vi.fn().mockResolvedValue("Nostr test-signature");
+  const relay = new Relay("https://relay.example", { nip98Header: sign } as unknown as Signer);
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
+    ok: false,
+    code: "legacy_ticket_missing_issue",
+    error: "The ticket has no linked GitHub issue.",
+    resolution: "Link an issue in the lane repository.",
+  }), { status: 409 })));
+  await expect(relay.command("ticket.move", { ticketId: "ticket-id" })).rejects.toThrow(
+    /ticket\.move failed \[request .*HTTP 409 legacy_ticket_missing_issue: The ticket has no linked GitHub issue\. Resolution: Link an issue in the lane repository\. Agent guide: .*AGENT-GUIDE\.md/,
+  );
+});
