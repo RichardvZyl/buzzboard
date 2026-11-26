@@ -85,6 +85,42 @@ async function boardWith(events: SignedEvent[], me = OWNER) {
   return { relay, data, cards: data.cards.get(ADDR) ?? [] };
 }
 
+describe("review report history", () => {
+  it("keeps signed notes through reordering, notification changes, and reassignment", async () => {
+    const issue = issueEvent();
+    const content = "Tests passed. https://github.com/acme/widgets/pull/42";
+    const events = [
+      laneEvent(), issue,
+      statusEvent(1630, OWNER, 101, issue.id, { tags: [["assignee", AGENT]] }),
+      statusEvent(1631, AGENT, 102, issue.id, { content }),
+    ];
+    const edits = [
+      statusEvent(1630, OWNER, 103, issue.id, { tags: [["t", "in-review"], ["rank", "a"]] }),
+      statusEvent(1630, OWNER, 104, issue.id, { tags: [["t", "in-review"], ["notify", "codex", "comment"]] }),
+      statusEvent(1630, OWNER, 105, issue.id, { tags: [["t", "in-review"], ["assignee", MAINT]] }),
+      statusEvent(1630, STRANGER, 106, issue.id, { tags: [["t", "in-review"]], content: "Unauthorized report" }),
+    ];
+    for (const edit of edits) {
+      events.push(edit);
+      const { cards } = await boardWith(events);
+      expect(cards[0]).toMatchObject({ column: "in_review", reviewReport: content });
+    }
+  });
+
+  it("clears an earlier report after leaving and reentering review", async () => {
+    const issue = issueEvent();
+    const { cards } = await boardWith([
+      laneEvent(), issue,
+      statusEvent(1630, OWNER, 101, issue.id, { tags: [["assignee", AGENT]] }),
+      statusEvent(1631, AGENT, 102, issue.id, { content: "Earlier review notes" }),
+      statusEvent(1630, OWNER, 103, issue.id, { tags: [["t", "in-progress"]] }),
+      statusEvent(1630, OWNER, 104, issue.id, { tags: [["t", "in-review"]] }),
+    ]);
+    expect(cards[0].column).toBe("in_review");
+    expect(cards[0].reviewReport).toBeUndefined();
+  });
+});
+
 // --- lane parsing ---
 
 describe("lane parsing", () => {
@@ -398,16 +434,20 @@ describe("actions", () => {
     expect(tagsOf(e, "rank")).toHaveLength(1);
   });
 
-  it("assignCard publishes dispatch mention then status with assignee + dispatch tags", async () => {
+  it("assignCard records the assignment before waking the agent", async () => {
     const relay = new StubRelay();
     await assignCard(relay as never, signer, lane, card, AGENT, "codey", true, "paolo");
-    expect(relay.submitted.map((e) => e.kind)).toEqual([9, 1630]);
-    const [msg, status] = relay.submitted;
+    expect(relay.submitted.map((e) => e.kind)).toEqual([1630, 9]);
+    const [status, msg] = relay.submitted;
     expect(msg.tags).toContainEqual(["h", CHANNEL]);
     expect(msg.tags).toContainEqual(["p", AGENT]);
     expect(msg.content).toContain("@codey");
     expect(msg.content).toContain(card.id);
     expect(status.tags).toContainEqual(["assignee", AGENT]);
+    expect(status.tags).toContainEqual(["agent", "codey"]);
+    const assignment = status.tags.find(([key]) => key === "assignment")?.[1];
+    expect(assignment).toMatch(/^[0-9a-f-]{36}$/);
+    expect(msg.content).toContain(`--assignment ${assignment}`);
     expect(status.tags).toContainEqual(["dispatch", msg.id, CHANNEL]);
   });
 

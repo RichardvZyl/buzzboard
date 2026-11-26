@@ -119,7 +119,12 @@ async function post(signer, path, payload) {
   try { return JSON.parse(text); } catch { return text; }
 }
 const query = (s, filters) => post(s, '/query', filters);
-const submit = async (s, ev) => { await post(s, '/events', ev); return ev; };
+const submit = async (_signer, event) => die(`direct writes of event kind ${event.kind} are disabled; use the managed command endpoint`);
+async function command(signer, operation, input) {
+  const result = await post(signer, '/board/commands', {version: 1, requestId: randomUUID(), operation, input});
+  if (result?.ok !== true) die(result?.error || 'board command was not confirmed');
+  return result;
+}
 
 function laneAddress() {
   if (!cfg.lane?.owner || !cfg.lane?.d) die('config.lane.owner / config.lane.d not set (run lane-create first)');
@@ -140,12 +145,18 @@ const brief = (ev) => ({id: ev.id, kind: ev.kind, pubkey: ev.pubkey, npub: nip19
 
 // Column derivation: a simplified port of buzzboard's deriveCard (strict actors only), plus lane
 // maintainers from the lane event. NOTE: the buzzboard SPA's deriveCard does not read maintainers.
+const statusRecency = (a, b) =>
+  b.created_at - a.created_at || Number(a.kind === K.OPEN) - Number(b.kind === K.OPEN) || a.id.localeCompare(b.id);
+
 function derive(issue, statuses, maintainers = []) {
   const refs = statuses.filter((e) => e.tags.some((t) => t[0] === 'e' && t[1] === issue.id))
-    .sort((a, b) => b.created_at - a.created_at || Number(a.kind === K.OPEN) - Number(b.kind === K.OPEN) || (a.id < b.id ? -1 : 1));
-  const assignee = refs.map((e) => tag(e, 'assignee')).find((v) => v !== undefined) || null;
+    .sort(statusRecency);
+  const assignment = refs.find((event) => tag(event, 'assignee') !== undefined);
+  const assignee = assignment && tag(assignment, 'assignee') || null;
   const actors = new Set([issue.pubkey, cfg.lane.owner, assignee, ...maintainers].filter(Boolean));
-  const st = refs.find((e) => actors.has(e.pubkey)) || null;
+    const st = refs.find((event) => actors.has(event.pubkey)
+    && (!tag(event, 'interrupted-assignment')
+      || tag(event, 'interrupted-assignment') === (assignment && tag(assignment, 'assignment')))) || null;
   let column = 'backlog';
   if (st) {
     const by = assignee && st.pubkey === assignee; const labels = tagsOf(st, 't');
@@ -153,12 +164,12 @@ function derive(issue, statuses, maintainers = []) {
     else if (st.kind === K.OPEN && labels.includes('in-progress')) column = 'in_progress';
     else if (st.kind === K.OPEN && labels.includes('in-review')) column = 'in_review';
     else if (by && st.kind === K.RESOLVED) column = 'in_review';
-    else if (by && st.kind === K.DRAFT) column = 'in_review (blocked)';
+    else if (st.kind === K.DRAFT && (by || tag(st, 'interrupted-assignment'))) column = 'in_review (blocked)';
     else if (st.kind === K.RESOLVED) column = 'done';
     else if (st.kind === K.CLOSED) column = 'closed';
     else if (st.kind === K.DRAFT) column = 'triage';
   } else if (tagsOf(issue, 't').includes('triage')) column = 'triage';
-  return {id: issue.id, subject: tag(issue, 'subject'), author: issue.pubkey, assignee, column, labels: tagsOf(issue, 't'), fixture: issue.tags.find((t) => t[0] === 'fixture') || null, statusEvents: refs.length};
+  return {id: issue.id, subject: tag(issue, 'subject'), author: issue.pubkey, assignee, assignment: assignment && tag(assignment, 'assignment') || null, column, labels: tagsOf(issue, 't'), fixture: issue.tags.find((t) => t[0] === 'fixture') || null, statusEvents: refs.length};
 }
 async function fetchCards(s) {
   const a = laneAddress();
@@ -255,6 +266,16 @@ async function readChannel(s, channel, {since, limit, kinds}) {
 
 // ---- commands ----
 switch (cmd) {
+  case 'command': {
+    if (typeof args.operation !== 'string' || !/^(ticket|lane)\.[a-z][a-zA-Z]*$/.test(args.operation)) {
+      die('--operation <ticket.operation|lane.operation> required');
+    }
+    if (typeof args.input !== 'string') die('--input <JSON file> required');
+    const input = JSON.parse(readFileSync(args.input, 'utf8').replace(/^\uFEFF/, ''));
+    if (!input || Array.isArray(input) || typeof input !== 'object') die('--input must contain a JSON object');
+    out(await command(loadSigner(args.as), args.operation, input));
+    break;
+  }
   case 'keygen': {
     const bot = args._[0]; const t = credTarget(bot);
     if (credRead(t) !== null) die(`key for ${bot} already exists (${t}); refusing to overwrite`);
@@ -314,31 +335,44 @@ switch (cmd) {
   }
   case 'post': {
     const s = loadSigner(args.as);
-    if (!args.title) die('--title required');
-    const tags = [['a', laneAddress()], ['p', cfg.lane.owner], ['subject', String(args.title)], ...list(args.label).map((l) => ['t', String(l)])];
-    out(brief(await submit(s, s.sign(K.ISSUE, tags, String(args.body || ''))))); break;
+    if (typeof args.title !== 'string' || !args.title.trim()) die('--title required');
+    out(await command(s, 'ticket.create', {
+      lane: laneAddress(), title: args.title.trim(), body: String(args.body || ''), labels: list(args.label),
+    }));
+    break;
+  }
+  case 'ack': {
+    const s = loadSigner(args.as);
+    if (typeof args.assignment !== 'string' || !UUID_RE.test(args.assignment)) die('--assignment <id> required');
+    out(await command(s, 'ticket.acknowledge', {
+      ticketId: await resolveIssueId(s), assignmentId: args.assignment,
+      provider: args.provider, model: args.model, effort: args.effort, capabilities: list(args.capability),
+    }));
+    break;
   }
   case 'claim': {
     const s = loadSigner(args.as);
-    const id = await resolveIssueId(s);
-    const ev = await submit(s, s.sign(K.OPEN, statusTags(id, [['t', 'in-progress'], ['assignee', s.pubkey]]), args.note || `claimed by ${s.bot}`));
-    enqueueNotify(s.bot, id, 'in_progress', args.note, ev.id);
-    enqueueNotify(s.bot, id, 'assignee', args.note, ev.id);
-    out(brief(ev)); break;
+    out(await command(s, 'ticket.claim', {ticketId: await resolveIssueId(s), note: args.note}));
+    break;
+  }
+  case 'interrupt': {
+    const s = loadSigner(args.as);
+    if (typeof args.assignment !== 'string' || !UUID_RE.test(args.assignment)) die('--assignment <id> required');
+    if (!['limit', 'failed', 'closed'].includes(args.reason)) die('--reason must be limit, failed, or closed');
+    out(await command(s, 'ticket.interrupt', {
+      ticketId: await resolveIssueId(s), assignmentId: args.assignment, reason: args.reason, note: args.note,
+    }));
+    break;
   }
   case 'resolve': {
-    const s = loadSigner(args.as); const id = await resolveIssueId(s);
-    const ev = await submit(s, s.sign(K.RESOLVED, statusTags(id), args.note || `resolved by ${s.bot}`));
-    // Assignee resolve → In Review; author/owner resolve → Done. Fan both; subscriptions filter.
-    enqueueNotify(s.bot, id, 'in_review', args.note, ev.id);
-    enqueueNotify(s.bot, id, 'done', args.note, ev.id);
-    out(brief(ev)); break;
+    const s = loadSigner(args.as);
+    out(await command(s, 'ticket.resolve', {ticketId: await resolveIssueId(s), note: args.note}));
+    break;
   }
   case 'close': {
-    const s = loadSigner(args.as); const id = await resolveIssueId(s);
-    const ev = await submit(s, s.sign(K.CLOSED, statusTags(id), args.note || `closed by ${s.bot}`));
-    enqueueNotify(s.bot, id, 'closed', args.note, ev.id);
-    out(brief(ev)); break;
+    const s = loadSigner(args.as);
+    out(await command(s, 'ticket.close', {ticketId: await resolveIssueId(s), note: args.note}));
+    break;
   }
   case 'list': {
     const s = loadSigner(args.as); const {issues, statuses, maintainers} = await fetchCards(s);
@@ -350,7 +384,28 @@ switch (cmd) {
     const [issue] = await query(s, [{ids: [id]}]);
     if (!issue) die(`issue ${id} not found`);
     const st = await query(s, [{kinds: STATUS, '#e': [id], limit: 500}]);
-    out({card: derive(issue, st, maintainersOf(await fetchLane(s))), issue: brief(issue), statuses: st.sort((a, b) => a.created_at - b.created_at).map(brief)}); break;
+    const assignments = st.filter((event) => tag(event, 'assignment')).sort(statusRecency).reverse();
+    const assignmentIds = assignments.map((event) => tag(event, 'assignment'));
+    const acknowledgements = assignmentIds.length
+      ? await query(s, [{kinds: [1111], '#E': [id], '#x': assignmentIds, limit: 500}])
+      : [];
+    const assignmentHistory = assignments.map((event) => {
+      const assignment = tag(event, 'assignment');
+      const assignee = tag(event, 'assignee') || null;
+      const acknowledged = acknowledgements.find((ack) => ack.pubkey === assignee
+        && tag(ack, 'x') === assignment && tag(ack, 'assignment-ack') === event.id);
+      return {
+        assignment, assignee, event: event.id, assignedAt: event.created_at, assignedBy: event.pubkey,
+        agent: (acknowledged && tag(acknowledged, 'agent')) || tag(event, 'agent') || null,
+        acknowledgedAt: acknowledged?.created_at ?? null,
+        provider: (acknowledged && tag(acknowledged, 'provider')) || null,
+        model: (acknowledged && tag(acknowledged, 'model')) || null,
+        effort: (acknowledged && tag(acknowledged, 'effort')) || null,
+        capabilities: acknowledged ? tagsOf(acknowledged, 'capability') : [],
+      };
+    });
+    out({card: derive(issue, st, maintainersOf(await fetchLane(s))), issue: brief(issue), assignmentHistory, statuses: st.sort((a, b) => a.created_at - b.created_at).map(brief)});
+    break;
   }
   case 'import': {
     const s = loadSigner(args.as);
@@ -394,5 +449,5 @@ switch (cmd) {
     out({bot: s.bot, pubkey: s.pubkey, lane: laneAddress(), open: open.length, doneOrClosed: mine.length - open.length, cards: open});
     break;
   }
-  default: die('usage: buzz-board.mjs <keygen|whoami|profile|lane-create|lane|lane-maintainers|post|claim|resolve|close|list|assigned|get|channel-read|import> ...');
+  default: die('usage: buzz-board.mjs <command|keygen|whoami|profile|lane-create|lane|lane-maintainers|post|ack|claim|interrupt|resolve|close|list|assigned|get|channel-read|import> ...');
 }

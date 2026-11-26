@@ -1,0 +1,45 @@
+name: Notify BuzzBoard of branch deletion
+on:
+  workflow_call:
+    secrets:
+      webhook_url:
+        required: true
+      webhook_secret:
+        required: true
+permissions: {}
+jobs:
+  notify:
+    if: github.event_name == 'delete' && github.event.ref_type == 'branch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Send signed deletion event
+        env:
+          WEBHOOK_URL: ${{ secrets.webhook_url }}
+          WEBHOOK_SECRET: ${{ secrets.webhook_secret }}
+        run: |
+          node --input-type=module <<'NODE'
+          import { createHmac } from 'node:crypto';
+          import { readFileSync } from 'node:fs';
+          const event = JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8'));
+          const endpoint = new URL(process.env.WEBHOOK_URL);
+          if (endpoint.protocol !== 'https:' || endpoint.username || endpoint.password) {
+            throw new Error('BuzzBoard webhook must be HTTPS');
+          }
+          const timestamp = String(Math.floor(Date.now() / 1000));
+          const body = JSON.stringify({ repository: event.repository.full_name, ref: event.ref, runId: process.env.GITHUB_RUN_ID });
+          const signature = createHmac('sha256', process.env.WEBHOOK_SECRET)
+            .update(timestamp + '.' + body).digest('hex');
+          const response = await fetch(endpoint, {
+            method: 'POST',
+            redirect: 'error',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-BuzzBoard-Timestamp': timestamp,
+              'X-BuzzBoard-Signature': 'sha256=' + signature,
+            },
+            body,
+            signal: AbortSignal.timeout(15000),
+          });
+          if (!response.ok) throw new Error('BuzzBoard rejected event with HTTP ' + response.status);
+          NODE

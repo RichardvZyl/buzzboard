@@ -41,11 +41,16 @@ export class Relay {
     return (await resp.json()) as SignedEvent[];
   }
 
+  async command(operation: string, input: Record<string, unknown>): Promise<void> {
+    const response = await this.post("/board/commands", {
+      version: 1, requestId: crypto.randomUUID(), operation, input,
+    });
+    if (!response.ok) throw new Error(`Board command failed (${response.status}): ${(await response.text()).slice(0, 300)}`);
+    const result = await response.json();
+    if (result?.ok !== true) throw new Error(result?.error || "Board command was not confirmed.");
+  }
+
   async submit(event: SignedEvent): Promise<unknown> {
-    const resp = await this.post("/events", event);
-    if (!resp.ok) {
-      throw new Error(`publish failed (${resp.status}): ${(await resp.text()).slice(0, 300)}`);
-    }
-    return resp.json().catch(() => ({}));
+    throw new Error(`Direct writes of event kind ${event.kind} are disabled. Use a managed board command.`);
   }
 }

@@ -65,10 +65,16 @@ export interface Card {
   author: string;
   createdAt: number;
   updatedAt: number;
+  columnChangedAt?: number;
+  leftBacklogAt?: number;
+  dependencies?: string[];
+  closedAfterDone?: boolean;
+  unmetDependencies?: string[];
   column: Column;
   blocked: boolean;
   rank: string | null;
   assignee: string | null;
+  assignmentId?: string;
   threadLink: string | null;
   githubIssueUrl: string | null;
   reviewReport?: string;
@@ -146,43 +152,7 @@ const statusRecency = (a: SignedEvent, b: SignedEvent) =>
   Number(a.kind === K.KIND_STATUS_OPEN) - Number(b.kind === K.KIND_STATUS_OPEN) ||
   (a.id < b.id ? -1 : 1);
 
-function deriveCard(
-  issue: SignedEvent, statuses: SignedEvent[], names: Set<string>,
-  syncAgent: string | null, maintainers: string[] = [],
-): Card {
-  const referencing = statuses
-    .filter((ev) => ev.tags.some((t) => t[0] === "e" && t[1] === issue.id))
-    .sort(statusRecency);
-
-  // loosely-derived fields: newest event carrying the tag, any member
-  const assignee =
-    referencing.find((ev) => ev.tags.some((t) => t[0] === "assignee"))?.tags
-      .find((t) => t[0] === "assignee")?.[1] || null;
-  const rank = referencing.find((ev) => tagValue(ev, "rank"))
-    ? tagValue(referencing.find((ev) => tagValue(ev, "rank"))!, "rank")!
-    : null;
-  const dispatchTag = referencing
-    .find((ev) => ev.tags.some((t) => t[0] === "dispatch" && t.length >= 3))
-    ?.tags.find((t) => t[0] === "dispatch");
-
-  // column: strict actors only — the lane's declared sync agent counts,
-  // because tagging it on the announcement is the owner delegating status
-  // authority (GitHub-side closes must be able to move cards); NIP-34 lane
-  // maintainers count for the same reason (the owner delegated to them)
-  const actors = new Set([issue.pubkey.toLowerCase()]);
-  const owner = repoOwner(tagValue(issue, "a"));
-  if (owner) actors.add(owner);
-  if (assignee) actors.add(assignee.toLowerCase());
-  if (syncAgent) actors.add(syncAgent.toLowerCase());
-  for (const m of maintainers) actors.add(m.toLowerCase());
-
-  // GitHub cross-link: sync agent records it in status-event content
-  const githubIssueUrl =
-    referencing
-      .map((ev) => ev.content.match(/https:\/\/github\.com\/\S+\/issues\/\d+/)?.[0])
-      .find(Boolean) ?? null;
-  const statusEvent = referencing.find((ev) => actors.has(ev.pubkey.toLowerCase())) ?? null;
-
+function deriveColumn(issue: SignedEvent, statusEvent: SignedEvent | null, assignee: string | null) {
   let column: Column = "backlog";
   let blocked = false;
   if (statusEvent) {
@@ -192,7 +162,8 @@ function deriveCard(
       column = "in_progress";
     } else if (byAssignee && statusEvent.kind === K.KIND_STATUS_RESOLVED) {
       column = "in_review";
-    } else if (byAssignee && statusEvent.kind === K.KIND_STATUS_DRAFT) {
+    } else if (statusEvent.kind === K.KIND_STATUS_DRAFT
+        && (byAssignee || tagValue(statusEvent, "interrupted-assignment"))) {
       column = "in_review";
       blocked = true;
     } else if (statusEvent.kind === K.KIND_STATUS_RESOLVED) {
@@ -210,6 +181,89 @@ function deriveCard(
     column = columnFromLabels(tagValues(issue, "t")) ?? "backlog";
   }
 
+  return { column, blocked };
+}
+
+function deriveCard(
+  issue: SignedEvent, statuses: SignedEvent[], names: Set<string>,
+  syncAgent: string | null, maintainers: string[] = [],
+): Card {
+  const referencing = statuses
+    .filter((ev) => ev.tags.some((t) => t[0] === "e" && t[1] === issue.id))
+    .sort(statusRecency);
+
+  // loosely-derived fields: newest event carrying the tag, any member
+  const assignment = referencing.find((ev) => ev.tags.some((t) => t[0] === "assignee"));
+  const assignee = assignment ? tagValue(assignment, "assignee") || null : null;
+  const rank = referencing.find((ev) => tagValue(ev, "rank"))
+    ? tagValue(referencing.find((ev) => tagValue(ev, "rank"))!, "rank")!
+    : null;
+  const dispatchTag = referencing
+    .find((ev) => ev.tags.some((t) => t[0] === "dispatch" && t.length >= 3))
+    ?.tags.find((t) => t[0] === "dispatch");
+
+  // column: strict actors only — the lane's declared sync agent counts,
+  // because tagging it on the announcement is the owner delegating status
+  // authority (GitHub-side closes must be able to move cards); NIP-34 lane
+  // maintainers count for the same reason (the owner delegated to them)
+  const actors = new Set([issue.pubkey.toLowerCase()]);
+  const owner = repoOwner(tagValue(issue, "a"));
+  if (owner) actors.add(owner);
+
+  if (syncAgent) actors.add(syncAgent.toLowerCase());
+  for (const m of maintainers) actors.add(m.toLowerCase());
+
+  // GitHub cross-link: sync agent records it in status-event content
+  const githubIssueUrl =
+    referencing
+      .map((ev) => ev.content.match(/https:\/\/github\.com\/\S+\/issues\/\d+/)?.[0])
+      .find(Boolean) ?? null;
+  const assignmentId = assignment ? tagValue(assignment, "assignment") : undefined;
+  const actorStatuses = referencing.filter((event) => {
+    const author = event.pubkey.toLowerCase();
+    if (!actors.has(author) && author !== assignee?.toLowerCase()) return false;
+    const interruption = tagValue(event, "interrupted-assignment");
+    return !interruption || interruption === assignmentId;
+  });
+  const statusEvent = actorStatuses[0] ?? null;
+  const { column, blocked } = deriveColumn(issue, statusEvent, assignee);
+  let previousColumn = deriveColumn(issue, null, assignee).column;
+  let columnChangedAt = issue.created_at;
+  let leftBacklogAt: number | undefined;
+  for (const event of actorStatuses.slice().reverse()) {
+    const nextColumn = deriveColumn(issue, event, assignee).column;
+    if (nextColumn === previousColumn) continue;
+    columnChangedAt = event.created_at;
+    if (nextColumn === "backlog") leftBacklogAt = undefined;
+    else if (previousColumn === "backlog") leftBacklogAt = event.created_at;
+    previousColumn = nextColumn;
+  }
+
+  // Replay assignment changes only for the report history. An earlier
+  // assignee could submit a report while they still owned the assignment.
+  let reviewReport: string | undefined;
+  if (column === "in_review") {
+    let reviewer: string | null = null;
+    let reviewAssignmentId: string | undefined;
+    for (const event of referencing.slice().reverse()) {
+      const assigned = tagValue(event, "assignee");
+      if (assigned !== undefined) {
+        reviewer = assigned.toLowerCase() || null;
+        reviewAssignmentId = tagValue(event, "assignment");
+      }
+      const author = event.pubkey.toLowerCase();
+      if (!actors.has(author) && author !== reviewer) continue;
+      const interruption = tagValue(event, "interrupted-assignment");
+      if (interruption && interruption !== reviewAssignmentId) continue;
+
+      if (deriveColumn(issue, event, reviewer).column !== "in_review") {
+        reviewReport = undefined;
+      } else if (event.content.trim()) {
+        reviewReport = event.content.trim();
+      }
+    }
+  }
+
   names.add(issue.pubkey.toLowerCase());
   if (assignee) names.add(assignee.toLowerCase());
 
@@ -217,19 +271,45 @@ function deriveCard(
     id: issue.id,
     subject: tagValue(issue, "subject") ?? "(untitled)",
     body: issue.content,
+    dependencies: tagValues(issue, "depends-on").filter((id) => /^[a-f0-9]{64}$/.test(id)),
     labels: tagValues(issue, "t"),
     author: issue.pubkey.toLowerCase(),
     createdAt: issue.created_at,
     updatedAt: Math.max(issue.created_at, referencing[0]?.created_at ?? 0),
     column,
+    columnChangedAt,
+    leftBacklogAt,
+    closedAfterDone: column === "closed" && actorStatuses.some((event) => deriveColumn(issue, event, assignee).column === "done"),
     blocked,
     rank,
     assignee,
+    assignmentId: assignment ? tagValue(assignment, "assignment") : undefined,
     threadLink: dispatchTag ? `buzz://message?channel=${dispatchTag[2]}&id=${dispatchTag[1]}` : null,
     githubIssueUrl,
-    reviewReport: column === "in_review" ? statusEvent?.content.trim() || undefined : undefined,
+    reviewReport,
     notifications: parseNotifySubscriptions(referencing, issue.id),
   };
+}
+
+export async function fetchTicketComments(relay: Relay, issueId: string) {
+  const events = await relay.query([{ kinds: [1111], "#E": [issueId], limit: 500 }]);
+  return events.sort((a, b) => a.created_at - b.created_at || a.id.localeCompare(b.id));
+}
+
+export async function postTicketComment(relay: Relay, signer: Signer, card: Card, body: string) {
+  const content = body.trim();
+  if (!content) throw new Error("Enter a comment before posting.");
+  const kind = String(K.KIND_GIT_ISSUE);
+  const event = signer.signEvent(1111, [
+    ["E", card.id, "", card.author], ["K", kind], ["P", card.author],
+    ["e", card.id, "", card.author], ["k", kind], ["p", card.author],
+  ], content);
+  if (relay.command) {
+    await relay.command("ticket.comment", { ticketId: card.id, body: content });
+    return null;
+  }
+  await relay.submit(event);
+  return event;
 }
 
 export const cardOrder = (a: Card, b: Card) => {
@@ -327,6 +407,19 @@ export async function fetchBoard(relay: Relay, myPubkey: string): Promise<BoardD
         ...(card.assignee ? [card.assignee.toLowerCase()] : []),
       ]);
       card.labels = mergeLabels(card.labels, overlayUniq, issue.id, labelActors);
+      const purpose = overlayUniq.filter((event) => labelActors.has(event.pubkey.toLowerCase())
+        && tagValue(event, "e") === issue.id && tagValue(event, "L") === "buzz-board-purpose"
+        && tagValue(event, "subject")?.trim()).sort(statusRecency)[0];
+      if (purpose) {
+        card.subject = tagValue(purpose, "subject")!;
+        card.body = purpose.content;
+      }
+      const dependencyActors = new Set([issue.pubkey.toLowerCase(), ...(owning ? [owning.owner, ...owning.maintainers] : [])]);
+      const dependencyUpdate = overlayUniq.filter((event) => dependencyActors.has(event.pubkey.toLowerCase())
+        && tagValue(event, "e") === issue.id && tagValue(event, "L") === "buzz-board-dependencies")
+        .sort(statusRecency)[0];
+      if (dependencyUpdate) card.dependencies = tagValues(dependencyUpdate, "depends-on")
+        .filter((id) => /^[a-f0-9]{64}$/.test(id));
       const placedSlug = resolvePlacementSlug(overlayUniq, issue.id, lanes, nativeAddress);
       const nativeRepo = owning?.repoId.toLowerCase();
       const target = placedSlug
@@ -336,6 +429,11 @@ export async function fetchBoard(relay: Relay, myPubkey: string): Promise<BoardD
         : nativeAddress;
       if (cards.has(target)) cards.get(target)!.push(card);
       else cards.get(nativeAddress)!.push(card);
+    }
+    const allCards = [...cards.values()].flat();
+    const done = new Set(allCards.filter((card) => card.column === "done" || card.closedAfterDone).map((card) => card.id));
+    for (const card of allCards) {
+      card.unmetDependencies = (card.dependencies ?? []).filter((id) => !done.has(id));
     }
     for (const list of cards.values()) list.sort(cardOrder);
   }
@@ -359,7 +457,9 @@ async function fetchNames(relay: Relay, pubkeys: string[]): Promise<Map<string, 
     try {
       const content = JSON.parse(ev.content || "{}");
       const name = content.display_name || content.name;
-      if (name) names.set(ev.pubkey.toLowerCase(), name);
+      const runtime = [content.model, content.effort].filter((part): part is string =>
+        typeof part === "string" && Boolean(part.trim())).join(" ");
+      if (typeof name === "string") names.set(ev.pubkey.toLowerCase(), runtime ? `${name} - ${runtime}` : name);
     } catch {
       /* ignore malformed profiles */
     }
@@ -443,6 +543,9 @@ export async function createCard(
   subject: string, body: string, labels: string[],
   syncAgentName?: string,
 ): Promise<void> {
+  if (relay.command) return relay.command("ticket.create", {
+    lane: lane.address, title: subject, body, labels,
+  });
   const tags: string[][] = [["a", lane.address], ["p", lane.owner], ["subject", subject]];
   for (const label of labels) tags.push(["t", label]);
   const issue = signer.signEvent(K.KIND_GIT_ISSUE, tags, body);
@@ -467,11 +570,27 @@ export async function createCard(
   }
 }
 
+export async function saveCardDependencies(relay: Relay, signer: Signer, lane: Lane, card: Card, input: string) {
+  const ids = [...new Set(input.toLowerCase().split(/[\s,]+/).filter(Boolean))];
+  if (ids.some((id) => !/^[a-f0-9]{64}$/.test(id) || id === card.id)) {
+    throw new Error("Enter full ticket IDs. A ticket cannot depend on itself.");
+  }
+  if (relay.command) return relay.command("ticket.dependencies", { ticketId: card.id, dependencies: ids });
+  await relay.submit(signer.signEvent(KIND_LABEL, [
+    ["L", "buzz-board-dependencies"], ["l", "depends-on", "buzz-board-dependencies"], ["e", card.id], ["a", lane.address],
+    ...ids.map((id) => ["depends-on", id]),
+  ], ""));
+}
+
 export async function moveCard(
   relay: Relay, signer: Signer, lane: Lane, card: Card,
   column: Column, neighbors: { before: Card | null; after: Card | null },
 ): Promise<void> {
+  if (card.unmetDependencies?.length) throw new Error("Resolve or remove ticket dependencies before moving this ticket.");
   const { kind, labels } = COLUMN_TO_STATUS[column];
+  if (relay.command) return relay.command("ticket.move", {
+    ticketId: card.id, lane: lane.address, column, before: neighbors.before?.id, after: neighbors.after?.id,
+  });
   const rank = rankBetween(neighbors.before?.rank ?? "", neighbors.after?.rank ?? "");
   const extra: string[][] = labels.map((l) => ["t", l]);
   extra.push(["rank", rank]);
@@ -498,8 +617,9 @@ export async function saveCardNotifications(
 ): Promise<void> {
   const { kind, labels } = COLUMN_TO_STATUS[card.column];
   const extra: string[][] = labels.map((l) => ["t", l]);
-  if (card.assignee) extra.push(["assignee", card.assignee]);
+
   if (card.rank) extra.push(["rank", card.rank]);
+  if (relay.command) return relay.command("ticket.notifications", { ticketId: card.id, subscriptions });
   extra.push(...notifyTags(subscriptions));
   await relay.submit(signer.signEvent(kind, statusTags(card, lane, extra), ""));
 }
@@ -532,11 +652,16 @@ export async function assignCard(
   relay: Relay, signer: Signer, lane: Lane, card: Card,
   assignee: string, agentName: string, dispatch: boolean, myName: string,
 ): Promise<void> {
-  const extra: string[][] = [["assignee", assignee]];
+  if (relay.command) return relay.command("ticket.assign", { ticketId: card.id, agentPubkey: assignee || null });
+  const assignmentId = crypto.randomUUID();
+  const extra: string[][] = [["assignee", assignee], ["assignment", assignmentId]];
+  if (assignee && agentName) extra.push(["agent", agentName]);
+  let assignmentMessage: ReturnType<Signer["signEvent"]> | undefined;
   if (assignee && dispatch && lane.channelId) {
     const content =
       `@${agentName} you've been assigned: **${card.subject}**\n` +
       `- issue: \`${card.id}\`\n- repo: \`${lane.address}\`\n\n` +
+      `Acknowledge with \`buzz-board.mjs ack --as <your-slug> --issue ${card.id} --assignment ${assignmentId}\`. ` +
       `Read it with \`buzz issues get --event ${card.id}\`. ` +
       `When you start, run \`buzz issues status --issue ${card.id} --status open\` ` +
       `(the board moves the card to In Progress) and reply in this thread with progress. ` +
@@ -549,14 +674,15 @@ export async function assignCard(
       [["h", lane.channelId], ["p", assignee]],
       content,
     );
-    await relay.submit(msg);
     extra.push(["dispatch", msg.id, lane.channelId]);
+    assignmentMessage = msg;
   }
   const { kind, labels } = COLUMN_TO_STATUS[card.column];
   extra.push(...notifyTags(card.notifications));
   const tags = statusTags(card, lane, labels.map((l): string[] => ["t", l]).concat(extra));
   const status = signer.signEvent(kind, tags, "");
   await relay.submit(status);
+  if (assignmentMessage) await relay.submit(assignmentMessage);
   if (assignee !== (card.assignee ?? "")) {
     await emitCardNotifications(relay, signer, lane, card, {
       type: "assignee",
@@ -604,6 +730,7 @@ export async function createLane(
   syncAgent?: string | null,
   syncAgentName?: string,
 ): Promise<void> {
+  if (relay.command) return relay.command("lane.create", { name, description, agentPubkeys });
   const repoId = name.toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^[.-]+|[-.]+$/g, "")
     .slice(0, 64) || "lane";
   let channelId = existingChannelId;
@@ -694,6 +821,7 @@ export async function addBoardLinkToCanvas(
   const current = events[0]?.content ?? "";
   const next = mergeBoardBlock(current, boardCanvasBlock(boardUrl, owner, repoId));
   if (next === current) return;
+  if (relay.command) return relay.command("lane.linkCanvas", { channelId, boardUrl });
   await relay.submit(signer.signEvent(K.KIND_CANVAS, [["h", channelId]], next));
 }
 
@@ -741,10 +869,12 @@ async function republishLane(
 export async function attachChannel(
   relay: Relay, signer: Signer, lane: Lane, channelId: string,
 ): Promise<void> {
+  if (relay.command) return relay.command("lane.attachChannel", { lane: lane.address, channelId });
   await republishLane(relay, signer, lane, (tags) => withTag(tags, "buzz-channel", channelId));
 }
 
 export async function deleteLane(relay: Relay, signer: Signer, lane: Lane): Promise<void> {
+  if (relay.command) return relay.command("lane.delete", { lane: lane.address });
   await relay.submit(signer.signEvent(
     K.KIND_DELETION,
     [["a", lane.address], ["k", String(K.KIND_REPO_ANNOUNCEMENT)]],
