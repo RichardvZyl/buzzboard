@@ -121,6 +121,40 @@ describe("review report history", () => {
   });
 });
 
+describe("dependency completion", () => {
+  it.each([
+    { reopened: false, expected: false },
+    { reopened: true, expected: true },
+  ])("only accepts closure directly from Done (reopened: $reopened)", async ({ reopened, expected }) => {
+    const prerequisite = issueEvent();
+    const dependent = ev(1621, OWNER, 101, [["a", ADDR], ["depends-on", prerequisite.id]]);
+    const events = [laneEvent(), prerequisite, dependent, statusEvent(1631, OWNER, 102, prerequisite.id)];
+    if (reopened) events.push(statusEvent(1630, OWNER, 103, prerequisite.id));
+    events.push(statusEvent(1632, OWNER, 104, prerequisite.id), statusEvent(1632, OWNER, 105, prerequisite.id));
+    const { cards } = await boardWith(events);
+    expect(cards.find((card) => card.id === dependent.id)?.unmetDependencies)
+      .toEqual(expected ? [prerequisite.id] : []);
+  });
+
+  it("resolves a completed prerequisite outside the display window", async () => {
+    const prerequisite = issueEvent();
+    const dependent = ev(1621, OWNER, 101, [["a", ADDR], ["depends-on", prerequisite.id]]);
+    const completion = statusEvent(1631, OWNER, 102, prerequisite.id);
+    class WindowedRelay extends StubRelay {
+      override async query(filters: Record<string, unknown>[]) {
+        const matches = await super.query(filters);
+        return filters.some((filter) => Array.isArray(filter.ids) || filter["#e"]?.toString() === prerequisite.id)
+          ? matches : matches.filter((event) => event.id !== prerequisite.id && event.id !== completion.id);
+      }
+    }
+    const relay = new WindowedRelay([laneEvent(), prerequisite, dependent, completion]);
+    const data = await fetchBoard(relay as never, OWNER);
+    const tickets = data.cards.get(ADDR) ?? [];
+    expect(tickets.map((card) => card.id)).toEqual([dependent.id]);
+    expect(tickets[0].unmetDependencies).toEqual([]);
+  });
+});
+
 // --- lane parsing ---
 
 describe("lane parsing", () => {

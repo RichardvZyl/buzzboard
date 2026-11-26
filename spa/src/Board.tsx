@@ -158,7 +158,7 @@ export function Board({ data, session, refresh, busyRef, optimisticMove }: {
       const rect = others[i].getBoundingClientRect();
       if (e.clientY < rect.top + rect.height / 2) { index = i; break; }
     }
-    const target = all.filter((c) => c.column === column && c.id !== card.id);
+    const target = all.filter((c) => c.column === column && !c.unmetDependencies?.length && c.id !== card.id);
     // nearest *ranked* neighbors — unranked cards can't anchor a rank
     const before = target.slice(0, index).reverse().find((c) => c.rank !== null) ?? null;
     const after = target.slice(index).find((c) => c.rank !== null) ?? null;

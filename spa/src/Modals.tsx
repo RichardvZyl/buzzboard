@@ -311,7 +311,7 @@ export function CardModal({ card, lane, session, agents, nameOf, onDemoThread, o
         </button>
       </div>
 
-      {Boolean(card.unmetDependencies?.length) && <p className="notice">Blocked by unfinished ticket dependencies.</p>}
+      {Boolean(card.unmetDependencies?.length) && <p className="notice">{card.unverifiedDependencies?.length ? "Blocked because dependency completion could not be verified." : "Blocked by unfinished ticket dependencies."}</p>}
       {(canEditDependencies || Boolean(card.dependencies?.length)) && (
         <div className="row">
           <label>Depends on

@@ -45,7 +45,7 @@ export class Relay {
     const response = await this.post("/board/commands", {
       version: 1, requestId: crypto.randomUUID(), operation, input,
     });
-    if (!response.ok) throw new Error(`Board command failed (${response.status}): ${(await response.text()).slice(0, 300)}`);
+    if (!response.ok) throw new Error(`Board command failed (${response.status}): ${(await response.text()).slice(0, 300)} Agent guide: https://github.com/RichardvZyl/buzzboard/blob/codex/public-work/AGENT-GUIDE.md`);
     const result = await response.json();
     if (result?.ok !== true) throw new Error(result?.error || "Board command was not confirmed.");
   }

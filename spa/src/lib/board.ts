@@ -70,6 +70,7 @@ export interface Card {
   dependencies?: string[];
   closedAfterDone?: boolean;
   unmetDependencies?: string[];
+  unverifiedDependencies?: string[];
   column: Column;
   blocked: boolean;
   rank: string | null;
@@ -230,10 +231,12 @@ function deriveCard(
   let previousColumn = deriveColumn(issue, null, assignee).column;
   let columnChangedAt = issue.created_at;
   let leftBacklogAt: number | undefined;
+  let closedAfterDone = false;
   for (const event of actorStatuses.slice().reverse()) {
     const nextColumn = deriveColumn(issue, event, assignee).column;
     if (nextColumn === previousColumn) continue;
     columnChangedAt = event.created_at;
+    closedAfterDone = nextColumn === "closed" && previousColumn === "done";
     if (nextColumn === "backlog") leftBacklogAt = undefined;
     else if (previousColumn === "backlog") leftBacklogAt = event.created_at;
     previousColumn = nextColumn;
@@ -279,7 +282,7 @@ function deriveCard(
     column,
     columnChangedAt,
     leftBacklogAt,
-    closedAfterDone: column === "closed" && actorStatuses.some((event) => deriveColumn(issue, event, assignee).column === "done"),
+    closedAfterDone,
     blocked,
     rank,
     assignee,
@@ -431,9 +434,28 @@ export async function fetchBoard(relay: Relay, myPubkey: string): Promise<BoardD
       else cards.get(nativeAddress)!.push(card);
     }
     const allCards = [...cards.values()].flat();
-    const done = new Set(allCards.filter((card) => card.column === "done" || card.closedAfterDone).map((card) => card.id));
+    const dependencyIds = [...new Set(allCards.flatMap((card) => card.dependencies ?? []))];
+    const completion = new Map<string, boolean>();
+    // Read each dependency directly so unrelated cards and statuses cannot
+    // crowd it out of the board's display queries.
+    for (let i = 0; i < dependencyIds.length; i += 8) {
+      await Promise.all(dependencyIds.slice(i, i + 8).map(async (id) => {
+        try {
+          const [issue] = await relay.query([{ kinds: [K.KIND_GIT_ISSUE], ids: [id], limit: 1 }]);
+          const dependencyLane = issue && laneByAddress.get(tagValue(issue, "a") ?? "");
+          if (!dependencyLane) return;
+          const history = await relay.query([{ kinds: K.STATUS_KINDS, "#e": [id], limit: 500 }]);
+          const dependency = deriveCard(issue, history, new Set(), dependencyLane.syncAgent, dependencyLane.maintainers);
+          if (history.length >= 500 && dependency.column === "closed" && !dependency.closedAfterDone) return;
+          completion.set(id, dependency.column === "done" || Boolean(dependency.closedAfterDone));
+        } catch {
+          // The board stays readable and the move remains blocked.
+        }
+      }));
+    }
     for (const card of allCards) {
-      card.unmetDependencies = (card.dependencies ?? []).filter((id) => !done.has(id));
+      card.unmetDependencies = (card.dependencies ?? []).filter((id) => completion.get(id) !== true);
+      card.unverifiedDependencies = card.unmetDependencies.filter((id) => !completion.has(id));
     }
     for (const list of cards.values()) list.sort(cardOrder);
   }

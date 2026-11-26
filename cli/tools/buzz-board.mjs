@@ -115,11 +115,13 @@ async function post(signer, path, payload) {
   const auth = signer.sign(27235, [['u', url], ['method', 'POST'], ['nonce', randomUUID()], ['payload', createHash('sha256').update(body).digest('hex')]]);
   const r = await fetch(url, {method: 'POST', headers: {Authorization: 'Nostr ' + Buffer.from(JSON.stringify(auth)).toString('base64'), 'Content-Type': 'application/json'}, body});
   const text = await r.text();
-  if (!r.ok) die(`${path} failed (${r.status}): ${text.slice(0, 300)}`);
+  if (!r.ok) {
+    const guide = path === '/board/commands' ? ' Agent guide: https://github.com/RichardvZyl/buzzboard/blob/codex/public-work/AGENT-GUIDE.md' : '';
+    die(`${path} failed (${r.status}): ${text.slice(0, 300)}${guide}`);
+  }
   try { return JSON.parse(text); } catch { return text; }
 }
 const query = (s, filters) => post(s, '/query', filters);
-const submit = async (_signer, event) => die(`direct writes of event kind ${event.kind} are disabled; use the managed command endpoint`);
 async function command(signer, operation, input) {
   const result = await post(signer, '/board/commands', {version: 1, requestId: randomUUID(), operation, input});
   if (result?.ok !== true) die(result?.error || 'board command was not confirmed');
@@ -180,7 +182,6 @@ async function fetchCards(s) {
   const maintainers = maintainersOf(await fetchLane(s));
   return {issues, statuses: uniq, maintainers};
 }
-const statusTags = (issueId, extra = []) => [['e', issueId, '', 'root'], ['a', laneAddress()], ['p', cfg.lane.owner], ...extra];
 // Card id from --issue or the first positional argument. Full 64-char hex ids pass through; a shorter hex
 // prefix (min 8 chars, e.g. the 12-char ids in notes) is resolved against this lane's cards and must match
 // exactly one. Without this, a missing id reached the relay as null (400 'invalid type: null') and a short id
@@ -267,8 +268,8 @@ async function readChannel(s, channel, {since, limit, kinds}) {
 // ---- commands ----
 switch (cmd) {
   case 'command': {
-    if (typeof args.operation !== 'string' || !/^(ticket|lane)\.[a-z][a-zA-Z]*$/.test(args.operation)) {
-      die('--operation <ticket.operation|lane.operation> required');
+    if (typeof args.operation !== 'string' || !/^(ticket|lane|agent)\.[a-z][a-zA-Z]*$/.test(args.operation)) {
+      die('--operation <ticket.operation|lane.operation|agent.operation> required');
     }
     if (typeof args.input !== 'string') die('--input <JSON file> required');
     const input = JSON.parse(readFileSync(args.input, 'utf8').replace(/^\uFEFF/, ''));
@@ -288,19 +289,14 @@ switch (cmd) {
   }
   case 'whoami': { const s = loadSigner(args.as); out({bot: s.bot, pubkey: s.pubkey, npub: nip19.npubEncode(s.pubkey)}); break; }
   case 'profile': {
-    const s = loadSigner(args.as);
-    const ev = await submit(s, s.sign(K.PROFILE, [], JSON.stringify({name: args.name, display_name: args.name, about: args.about || 'Grok Bot agent on the A2A Buzz Board', bot: true})));
-    out(brief(ev)); break;
+    out(await command(loadSigner(args.as), 'agent.profile', { name: args.name, about: args.about }));
+    break;
   }
   case 'lane-create': {
-    const s = loadSigner(args.as);
-    const channelId = randomUUID(); const events = [];
-    events.push(await submit(s, s.sign(K.CREATE_CHANNEL, [['h', channelId], ['name', args.name], ['about', `buzzboard lane: ${args.name}`]])));
-    for (const pk of String(args.members || '').split(',').filter(Boolean)) events.push(await submit(s, s.sign(K.ADD_MEMBER, [['h', channelId], ['p', pk], ['role', 'bot']])));
-    const tags = [['d', args.slug], ['name', args.name], ['buzz-channel', channelId]];
-    if (args.about) tags.push(['description', args.about]);
-    events.push(await submit(s, s.sign(K.REPO, tags)));
-    out({lane: `${K.REPO}:${s.pubkey}:${args.slug}`, channelId, events: events.map(brief)}); break;
+    out(await command(loadSigner(args.as), 'lane.create', {
+      name: args.name, slug: args.slug, description: args.about, agentPubkeys: hexList(args.members),
+    }));
+    break;
   }
   case 'lane': {
     const s = loadSigner(args.as); const lane = await fetchLane(s);
@@ -329,9 +325,7 @@ switch (cmd) {
     const created_at = Math.max(Math.floor(Date.now() / 1000), lane.created_at + 1);
     const summary = {lane: laneAddress(), previousEvent: lane.id, maintainersBefore: before, maintainersAfter: after};
     if (args['dry-run']) { out({...summary, dryRun: true, event: {kind: K.REPO, pubkey: s.pubkey, created_at, tags, content: lane.content}}); break; }
-    const ev = s.sign(K.REPO, tags, lane.content);
-    if (ev.created_at <= lane.created_at) die('clock is behind the current lane event; refusing to publish an older replacement');
-    out({...summary, event: brief(await submit(s, ev))}); break;
+    out(await command(s, 'lane.maintainers', { lane: laneAddress(), add, remove })); break;
   }
   case 'post': {
     const s = loadSigner(args.as);
@@ -409,21 +403,14 @@ switch (cmd) {
   }
   case 'import': {
     const s = loadSigner(args.as);
-    const fx = JSON.parse(readFileSync(args.fixture, 'utf8').replace(/^\uFEFF/, ''));
-    const {issues} = await fetchCards(s);
-    const have = new Set(issues.map((i) => i.tags.find((t) => t[0] === 'fixture')).filter(Boolean).map((t) => `${t[1]}#${t[2]}`));
-    const results = [];
-    for (const row of fx.tasks) {
-      const key = `${fx.fixtureId}#${row.row}`;
-      if (have.has(key)) { results.push({row: row.row, skipped: 'already imported'}); continue; }
-      const tags = [['a', laneAddress()], ['p', cfg.lane.owner], ['subject', row.title], ['fixture', fx.fixtureId, String(row.row)], ['t', 'sprint-2026-10-22'], ...(row.labels || []).map((l) => ['t', l])];
-      const body = `Imported from fixture ${fx.fixtureId} (row ${row.row}).\nOwner: ${row.owner}\nStatus at import: ${row.status}\n\n${row.note}`;
-      const issue = await submit(s, s.sign(K.ISSUE, tags, body));
-      const map = {Done: K.RESOLVED, Dropped: K.CLOSED};
-      if (map[row.status]) await submit(s, s.sign(map[row.status], statusTags(issue.id), `status at import: ${row.status}`));
-      results.push({row: row.row, issue: issue.id, status: row.status});
+    const fixture = JSON.parse(readFileSync(args.fixture, 'utf8').replace(/^\uFEFF/, ''));
+    if (typeof fixture.fixtureId !== 'string' || !fixture.fixtureId.trim() || !Array.isArray(fixture.tasks)) {
+      die('fixture must contain fixtureId and tasks');
     }
-    out({fixtureId: fx.fixtureId, results}); break;
+    out(await command(s, 'ticket.import', {
+      lane: laneAddress(), fixtureId: fixture.fixtureId, tasks: fixture.tasks, dryRun: Boolean(args['dry-run']),
+    }));
+    break;
   }
   case 'channel-read': {
     const s = loadSigner(args.as);
